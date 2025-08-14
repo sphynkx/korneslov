@@ -1,0 +1,10 @@
+_XLAM/
+__pycache__/
+.venv*
+.env*
+!.env-sample
+env/
+venv/
+config.py
+*.db
+*.sqlite3
