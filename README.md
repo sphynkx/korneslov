@@ -158,7 +158,7 @@ sudo firewall-cmd --reload
 ```
 
 Return to server with application, check connection:
-curl -x socks5h://proxyuser:********@8EXT_IP_OF_PROXY_SERVER:1080 https://api.ipify.org
+curl -x socks5h://proxyuser:********@EXT_IP_OF_PROXY_SERVER:1080 https://api.ipify.org
 If response is EXT_IP_OF_PROXY_SERVER then everything is OK.
 
 Set variable `ALL_PROXY` in the `.env` with proxy parameters.
