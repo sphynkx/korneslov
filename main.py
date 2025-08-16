@@ -7,6 +7,7 @@ from config import TELEGRAM_BOT_TOKEN, USE_TRIBUTE, TRIBUTE_PRODUCT_10_ID, TRIBU
 from db import init_db, get_balance, dec_balance, add_balance
 from korneslov import is_valid_korneslov_query, parse_reference, fetch_full_korneslov_response
 from utils import split_message
+from texts.prompts import HELP_FORMAT
 
 logging.basicConfig(level=logging.INFO)
 
@@ -15,11 +16,6 @@ dp = Dispatcher()
 
 init_db()
 
-HELP_FORMAT = (
-    "Запрос должен быть в формате метода «Корнеслов».\n\n"
-    "<b>Пример:</b>\n"
-    "Корнеслов Бытие 1:1"
-)
 
 def pay_keyboard_for(uid: int) -> InlineKeyboardMarkup:
     url = f"{TRIBUTE_PRODUCT_10_URL}?uid={uid}&pid={TRIBUTE_PRODUCT_10_ID}"
@@ -104,7 +100,7 @@ async def handle_all(message: types.Message):
         )
         if TESTMODE or not USE_TRIBUTE:
             answer += "\n\n(Тестовый режим)"
-        # Разбиваем длинный ответ и отправляем по кускам
+        ## Split long response and sent by parts
         for part in split_message(answer):
             await message.answer(part)
     except Exception as e:
