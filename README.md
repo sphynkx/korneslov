@@ -122,3 +122,43 @@ journalctl -u korneslov-webhook.service -f
 ```
 
 
+# External proxy configuration.
+Only for cases then OpenAI prohibit connection from some ranges of IP (for example, reject some regions).
+On some external server install some simple proxy server (replace ******** with your password, dont use '!' sign):
+```
+dnf install 3proxy
+```
+Edit /etc/3proxy.conf:
+```
+nscache 65536
+timeouts 1 5 30 60 180 1800 15 60
+daemon
+log /var/log/3proxy/3proxy.log
+logformat "- +_L%t.%. %N.%p %E %U %C:%c %R:%r %O %I %h %T"
+rotate 30
+
+users proxyuser:CL:********
+auth strong
+allow proxyuser IP_OF_SERVER_WITH_BOT
+
+internal EXT_IP_OF_PROXY_SERVER
+external EXT_IP_OF_PROXY_SERVER
+socks -p1080
+```
+Start:
+```
+systemctl start 3proxy
+systemctl enable 3proxy
+```
+
+Also open port 1080 in firewall:
+```
+sudo firewall-cmd --add-port=1080/tcp --permanent
+sudo firewall-cmd --reload
+```
+
+Return to server with application, check connection:
+curl -x socks5h://proxyuser:********@8EXT_IP_OF_PROXY_SERVER:1080 https://api.ipify.org
+If response is EXT_IP_OF_PROXY_SERVER then everything is OK.
+
+Set variable `ALL_PROXY` in the `.env` with proxy parameters.

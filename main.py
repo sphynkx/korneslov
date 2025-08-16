@@ -5,7 +5,8 @@ from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import TELEGRAM_BOT_TOKEN, USE_TRIBUTE, TRIBUTE_PRODUCT_10_ID, TRIBUTE_PRODUCT_10_URL, TESTMODE
 from db import init_db, get_balance, dec_balance, add_balance
-from korneslov import is_valid_korneslov_query, parse_reference, generate_korneslov_response
+from korneslov import is_valid_korneslov_query, parse_reference, fetch_full_korneslov_response
+from utils import split_message
 
 logging.basicConfig(level=logging.INFO)
 
@@ -98,11 +99,14 @@ async def handle_all(message: types.Message):
 
     book, chap, verse = parse_reference(text)
     try:
-##        answer = generate_korneslov_response(book, chap, verse)
-        answer = await generate_korneslov_response(book, chap, verse)
+        answer = await fetch_full_korneslov_response(
+            book, chap, verse
+        )
         if TESTMODE or not USE_TRIBUTE:
             answer += "\n\n(Тестовый режим)"
-        await message.answer(answer)
+        # Разбиваем длинный ответ и отправляем по кускам
+        for part in split_message(answer):
+            await message.answer(part)
     except Exception as e:
         logging.exception(e)
         if not TESTMODE and USE_TRIBUTE:
