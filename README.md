@@ -1,7 +1,7 @@
 Here is small telegram bot that send requests to OpenAI engine to handle Bible poems with Kroneslov algorythm.
 
 # Nginx configuration
-Suppose we have preconfigured DNS-records for subdomain `korneslov` as subdoain fo `veda.wiki`.
+Suppose we have preconfigured DNS-records for subdomain `korneslov` as subdomain fo `veda.wiki`.
 
 ```
 dnf install nginx certbot python3-certbot-nginx
