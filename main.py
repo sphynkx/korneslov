@@ -6,12 +6,12 @@ from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeybo
 from config import TELEGRAM_BOT_TOKEN, USE_TRIBUTE, TRIBUTE_PRODUCT_10_ID, TRIBUTE_PRODUCT_10_URL, TESTMODE
 from db import init_db, get_balance, dec_balance, add_balance
 from korneslov import is_valid_korneslov_query, parse_reference, fetch_full_korneslov_response
-from utils import split_message
+from utils import split_message, format_text_for_telegram_md
 from texts.prompts import HELP_FORMAT
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode="HTML")
+bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode="MarkdownV2")
 dp = Dispatcher()
 
 init_db()
@@ -51,33 +51,32 @@ async def cmd_start(message: types.Message):
     )
     if TESTMODE:
         msg += "\n\n<b>Тестовый режим: оплата и баланс отключены.</b>"
-##    await message.answer(msg)
-    await message.answer(msg, reply_markup=main_reply_keyboard())
+    await message.answer(msg, reply_markup=main_reply_keyboard(), parse_mode="HTML")
 
 
 @dp.message(Command("balance"))
 async def cmd_balance(message: types.Message):
     if TESTMODE:
-        await message.answer("Тестовый режим: баланс не ограничен.")
+        await message.answer("Тестовый режим: баланс не ограничен.", parse_mode="HTML")
     elif USE_TRIBUTE:
         bal = get_balance(message.from_user.id)
-        await message.answer(f"Ваш баланс: <b>{bal}</b> запрос(ов).")
+        await message.answer(f"Ваш баланс: <b>{bal}</b> запрос(ов).", parse_mode="HTML")
     else:
-        await message.answer("Тестовый режим: баланс не ограничен.")
+        await message.answer("Тестовый режим: баланс не ограничен.", parse_mode="HTML")
 
 
 @dp.message(Command("buy"))
 async def cmd_buy(message: types.Message):
     if TESTMODE:
-        await message.answer("Тестовый режим: оплата отключена.")
+        await message.answer("Тестовый режим: оплата отключена.", parse_mode="HTML")
     elif USE_TRIBUTE:
         kb = pay_keyboard_for(message.from_user.id)
         await message.answer(
             "Выберите пакет. Оплата через Tribute.",
-            reply_markup=kb
+            reply_markup=kb, parse_mode="HTML"
         )
     else:
-        await message.answer("Тестовый режим: оплата отключена.")
+        await message.answer("Тестовый режим: оплата отключена.", parse_mode="HTML")
 
 
 @dp.message(F.text)
@@ -89,7 +88,7 @@ async def handle_all(message: types.Message):
         msg = HELP_FORMAT
         if TESTMODE or not USE_TRIBUTE:
             msg += "\n\n(Тестовый режим)"
-        await message.answer(msg)
+        await message.answer(msg, parse_mode="HTML")
         return
 
     if not TESTMODE and USE_TRIBUTE:
@@ -99,7 +98,7 @@ async def handle_all(message: types.Message):
             await message.answer(
                 "❌ У вас нет доступных запросов.\n"
                 "Пожалуйста, пополните баланс:",
-                reply_markup=kb
+                reply_markup=kb, parse_mode="HTML"
             )
             return
 
@@ -108,7 +107,7 @@ async def handle_all(message: types.Message):
             await message.answer(
                 "❌ У вас нет доступных запросов.\n"
                 "Пожалуйста, пополните баланс:",
-                reply_markup=kb
+                reply_markup=kb, parse_mode="HTML"
             )
             return
 
@@ -119,14 +118,14 @@ async def handle_all(message: types.Message):
         )
         if TESTMODE or not USE_TRIBUTE:
             answer += "\n\n(Тестовый режим)"
-        ## Split long response and sent by parts
         for part in split_message(answer):
-            await message.answer(part)
+            part = format_text_for_telegram_md(part)
+            await message.answer(part, parse_mode="MarkdownV2")
     except Exception as e:
         logging.exception(e)
         if not TESTMODE and USE_TRIBUTE:
             add_balance(uid, 1)
-        await message.answer("Произошла ошибка генерации. Повторите запрос позже.")
+        await message.answer("Произошла ошибка генерации. Повторите запрос позже.", parse_mode="HTML")
 
 async def main():
     await dp.start_polling(bot)
