@@ -119,8 +119,23 @@ async def handle_all(message: types.Message):
         if TESTMODE or not USE_TRIBUTE:
             answer += "\n\n(Тестовый режим)"
         for part in split_message(answer):
+            print(f"BEFOR: {part}")
             part = format_text_for_telegram_md(part)
+            print(f"AFTA: {part}")
             await message.answer(part, parse_mode="MarkdownV2")
+        '''
+        for part in split_message(answer):
+            lines = part.split('\n')
+            for i, line in enumerate(lines):
+                if not line.strip():
+                    print(f"SKIP empty line {i}")
+                    continue
+                try:
+                    await message.answer(line+"\u200B", parse_mode="MarkdownV2")
+                except Exception as e:
+                    print(f"ERROR in line {i}: {repr(line)}")
+                    raise e
+        '''
     except Exception as e:
         logging.exception(e)
         if not TESTMODE and USE_TRIBUTE:

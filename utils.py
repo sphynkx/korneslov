@@ -16,18 +16,34 @@ def escape_numbered_list(text: str) -> str:
     # Превращает "1. ..." в "1\. ..."
     return re.sub(r'^(\d+)\.\s', r'\1\\. ', text, flags=re.MULTILINE)
 
+
+
+
+## Work variant but escapes ALL specsymbols - tg-parser not recognize that text id MD-formated and displays as simple text.
 def format_text_for_telegram_md(text: str) -> str:
     """
-    Форматирует текст для Telegram MarkdownV2:
-    1. Экранирует все спецсимволы.
-    2. Для нумерованных списков экранирует только точку (для Telegram).
+    Железобетонная экранировка для Telegram MarkdownV2.
+    Экранирует каждый markdown-спецсимвол всегда, по всему тексту.
     """
-    # Сначала экранируем точку для списков (1. , 2. , ...)
-    text = re.sub(r'^(\d+)\)', r'\1.', text, flags=re.MULTILINE) # 1) => 1.
-    text = escape_numbered_list(text)
-    # Потом экранируем все остальные спецсимволы
-    safe = escape_markdown_v2(text)
-    return safe
+    # Весь список спецсимволов
+    escape_chars = r'_*\[\]()~`>#+-=|{}.!'
+    return re.sub(r'([%s])' % re.escape(escape_chars), r'\\\1', text)
+    
+def format_text_for_telegram_md_BKP(text: str) -> str:
+    """
+    Экранирует только реально опасные места для Telegram MarkdownV2.
+    Оставляет *...* и _..._ для форматирования.
+    """
+    # 1. Экранируем точку после цифры в начале строки (нумерованный список)
+    text = re.sub(r'^(\d+)\.(\s)', r'\1\\.\2', text, flags=re.MULTILINE)
+    # 2. Экранируем #, +, -, =, !, . только в начале строки
+    text = re.sub(r'^(#|\+|-|=|!|\.)', r'\\\1', text, flags=re.MULTILINE)
+    # 3. Экранируем остальные спецсимволы глобально
+    escape_chars = r'[\[\]()~`>|{}]'
+    text = re.sub(r'([%s])' % escape_chars, r'\\\1', text)
+    return text
+
+
 
 def split_message(text, max_length=4000):
     """Split text by parts less than max_length, splitting by paragraph or dots."""
