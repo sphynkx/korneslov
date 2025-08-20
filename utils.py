@@ -29,18 +29,20 @@ def format_text_for_telegram_md(text: str) -> str:
     escape_chars = r'_*\[\]()~`>#+-=|{}.!'
     return re.sub(r'([%s])' % re.escape(escape_chars), r'\\\1', text)
     
-def format_text_for_telegram_md_BKP(text: str) -> str:
+def format_text_for_telegram_md_BLA(text: str) -> str:
     """
-    Экранирует только реально опасные места для Telegram MarkdownV2.
+    Экранирует только опасные спецсимволы для Telegram MarkdownV2.
     Оставляет *...* и _..._ для форматирования.
     """
     # 1. Экранируем точку после цифры в начале строки (нумерованный список)
     text = re.sub(r'^(\d+)\.(\s)', r'\1\\.\2', text, flags=re.MULTILINE)
     # 2. Экранируем #, +, -, =, !, . только в начале строки
     text = re.sub(r'^(#|\+|-|=|!|\.)', r'\\\1', text, flags=re.MULTILINE)
-    # 3. Экранируем остальные спецсимволы глобально
-    escape_chars = r'[\[\]()~`>|{}]'
+    # 3. Экранируем [ ] ( ) ~ ` > | { } во всем тексте
+    escape_chars = r'\[\]()~`>|{}+\.'
     text = re.sub(r'([%s])' % escape_chars, r'\\\1', text)
+    text = re.sub(r'^(\d+)\.(?=\s|\S)\\(\\)', r'\1\\.', text, flags=re.MULTILINE)
+
     return text
 
 

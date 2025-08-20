@@ -119,9 +119,9 @@ async def handle_all(message: types.Message):
         if TESTMODE or not USE_TRIBUTE:
             answer += "\n\n(Тестовый режим)"
         for part in split_message(answer):
-            print(f"BEFOR: {part}")
+            ##print(f"BEFOR: {part}")
             part = format_text_for_telegram_md(part)
-            print(f"AFTA: {part}")
+            ##print(f"AFTA: {part}")
             await message.answer(part, parse_mode="MarkdownV2")
         '''
         for part in split_message(answer):
