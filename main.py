@@ -1,17 +1,18 @@
 import asyncio
 import logging
+import re
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from config import TELEGRAM_BOT_TOKEN, USE_TRIBUTE, TRIBUTE_PRODUCT_10_ID, TRIBUTE_PRODUCT_10_URL, TESTMODE
 from db import init_db, get_balance, dec_balance, add_balance
 from korneslov import is_valid_korneslov_query, parse_reference, fetch_full_korneslov_response
-from utils import split_message, format_text_for_telegram_md
+from utils import split_message ####2DEL, html_escape_telegram, check_html_balance
 from texts.prompts import HELP_FORMAT
 
 logging.basicConfig(level=logging.INFO)
 
-bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode="MarkdownV2")
+bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher()
 
 init_db()
@@ -120,9 +121,17 @@ async def handle_all(message: types.Message):
             answer += "\n\n(Тестовый режим)"
         for part in split_message(answer):
             ##print(f"BEFOR: {part}")
-            part = format_text_for_telegram_md(part)
+            part = re.sub(r'<br.*?>', '', part)
+            '''
+            part = html_escape_telegram(part)
+            check_html_balance(part)
+            for i, c in enumerate(part):
+                print("     DEBUG_REPR_HEXORD: ", i, hex(ord(c)), repr(c))
+            print("     DEBUG_REPR_PART:", repr(part[max(0, 101-30):101+30]))
             ##print(f"AFTA: {part}")
-            await message.answer(part, parse_mode="MarkdownV2")
+            '''
+            await message.answer(part, parse_mode="HTML")
+            await asyncio.sleep(2)
         '''
         for part in split_message(answer):
             lines = part.split('\n')
@@ -131,7 +140,7 @@ async def handle_all(message: types.Message):
                     print(f"SKIP empty line {i}")
                     continue
                 try:
-                    await message.answer(line+"\u200B", parse_mode="MarkdownV2")
+                    await message.answer(line+"\u200B", parse_mode="HTML")
                 except Exception as e:
                     print(f"ERROR in line {i}: {repr(line)}")
                     raise e
