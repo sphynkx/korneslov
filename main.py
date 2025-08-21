@@ -1,12 +1,13 @@
 import asyncio
 import logging
+import re
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
 from config import TELEGRAM_BOT_TOKEN, USE_TRIBUTE, TRIBUTE_PRODUCT_10_ID, TRIBUTE_PRODUCT_10_URL, TESTMODE
 from db import init_db, get_balance, dec_balance, add_balance
 from korneslov import is_valid_korneslov_query, parse_reference, fetch_full_korneslov_response
-from utils import split_message
+from utils import split_message ####2DEL, html_escape_telegram, check_html_balance
 from texts.prompts import HELP_FORMAT
 
 logging.basicConfig(level=logging.INFO)
@@ -51,33 +52,32 @@ async def cmd_start(message: types.Message):
     )
     if TESTMODE:
         msg += "\n\n<b>Тестовый режим: оплата и баланс отключены.</b>"
-##    await message.answer(msg)
-    await message.answer(msg, reply_markup=main_reply_keyboard())
+    await message.answer(msg, reply_markup=main_reply_keyboard(), parse_mode="HTML")
 
 
 @dp.message(Command("balance"))
 async def cmd_balance(message: types.Message):
     if TESTMODE:
-        await message.answer("Тестовый режим: баланс не ограничен.")
+        await message.answer("Тестовый режим: баланс не ограничен.", parse_mode="HTML")
     elif USE_TRIBUTE:
         bal = get_balance(message.from_user.id)
-        await message.answer(f"Ваш баланс: <b>{bal}</b> запрос(ов).")
+        await message.answer(f"Ваш баланс: <b>{bal}</b> запрос(ов).", parse_mode="HTML")
     else:
-        await message.answer("Тестовый режим: баланс не ограничен.")
+        await message.answer("Тестовый режим: баланс не ограничен.", parse_mode="HTML")
 
 
 @dp.message(Command("buy"))
 async def cmd_buy(message: types.Message):
     if TESTMODE:
-        await message.answer("Тестовый режим: оплата отключена.")
+        await message.answer("Тестовый режим: оплата отключена.", parse_mode="HTML")
     elif USE_TRIBUTE:
         kb = pay_keyboard_for(message.from_user.id)
         await message.answer(
             "Выберите пакет. Оплата через Tribute.",
-            reply_markup=kb
+            reply_markup=kb, parse_mode="HTML"
         )
     else:
-        await message.answer("Тестовый режим: оплата отключена.")
+        await message.answer("Тестовый режим: оплата отключена.", parse_mode="HTML")
 
 
 @dp.message(F.text)
@@ -89,7 +89,7 @@ async def handle_all(message: types.Message):
         msg = HELP_FORMAT
         if TESTMODE or not USE_TRIBUTE:
             msg += "\n\n(Тестовый режим)"
-        await message.answer(msg)
+        await message.answer(msg, parse_mode="HTML")
         return
 
     if not TESTMODE and USE_TRIBUTE:
@@ -99,7 +99,7 @@ async def handle_all(message: types.Message):
             await message.answer(
                 "❌ У вас нет доступных запросов.\n"
                 "Пожалуйста, пополните баланс:",
-                reply_markup=kb
+                reply_markup=kb, parse_mode="HTML"
             )
             return
 
@@ -108,7 +108,7 @@ async def handle_all(message: types.Message):
             await message.answer(
                 "❌ У вас нет доступных запросов.\n"
                 "Пожалуйста, пополните баланс:",
-                reply_markup=kb
+                reply_markup=kb, parse_mode="HTML"
             )
             return
 
@@ -119,14 +119,37 @@ async def handle_all(message: types.Message):
         )
         if TESTMODE or not USE_TRIBUTE:
             answer += "\n\n(Тестовый режим)"
-        ## Split long response and sent by parts
         for part in split_message(answer):
-            await message.answer(part)
+            ##print(f"BEFOR: {part}")
+            part = re.sub(r'<br.*?>', '', part)
+            '''
+            part = html_escape_telegram(part)
+            check_html_balance(part)
+            for i, c in enumerate(part):
+                print("     DEBUG_REPR_HEXORD: ", i, hex(ord(c)), repr(c))
+            print("     DEBUG_REPR_PART:", repr(part[max(0, 101-30):101+30]))
+            ##print(f"AFTA: {part}")
+            '''
+            await message.answer(part, parse_mode="HTML")
+            await asyncio.sleep(2)
+        '''
+        for part in split_message(answer):
+            lines = part.split('\n')
+            for i, line in enumerate(lines):
+                if not line.strip():
+                    print(f"SKIP empty line {i}")
+                    continue
+                try:
+                    await message.answer(line+"\u200B", parse_mode="HTML")
+                except Exception as e:
+                    print(f"ERROR in line {i}: {repr(line)}")
+                    raise e
+        '''
     except Exception as e:
         logging.exception(e)
         if not TESTMODE and USE_TRIBUTE:
             add_balance(uid, 1)
-        await message.answer("Произошла ошибка генерации. Повторите запрос позже.")
+        await message.answer("Произошла ошибка генерации. Повторите запрос позже.", parse_mode="HTML")
 
 async def main():
     await dp.start_polling(bot)
