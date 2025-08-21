@@ -3,19 +3,22 @@ import logging
 import re
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import TELEGRAM_BOT_TOKEN, USE_TRIBUTE, TRIBUTE_PRODUCT_10_ID, TRIBUTE_PRODUCT_10_URL, TESTMODE
 from db import init_db, get_balance, dec_balance, add_balance
 from korneslov import is_valid_korneslov_query, parse_reference, fetch_full_korneslov_response
-from utils import split_message ####2DEL, html_escape_telegram, check_html_balance
+from utils import split_message
 from texts.prompts import HELP_FORMAT
+from menu import router, main_reply_keyboard
 
 logging.basicConfig(level=logging.INFO)
 
 bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher()
+dp.include_router(router)
 
 init_db()
+
 
 
 def pay_keyboard_for(uid: int) -> InlineKeyboardMarkup:
@@ -26,21 +29,6 @@ def pay_keyboard_for(uid: int) -> InlineKeyboardMarkup:
         ]
     )
     return kb
-
-
-def main_reply_keyboard() -> ReplyKeyboardMarkup:
-    kb = [
-        [
-            KeyboardButton(text="/buy"), 
-            KeyboardButton(text="/balance")
-        ],
-        [   KeyboardButton(text="Корнеслов Бытие 1:1"),
-            KeyboardButton(text="Корнеслов Бытие 3:1"),
-            KeyboardButton(text="Корнеслов Иоанна 11:35")
-        ],
-    ]
-    return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
-
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
@@ -54,7 +42,6 @@ async def cmd_start(message: types.Message):
         msg += "\n\n<b>Тестовый режим: оплата и баланс отключены.</b>"
     await message.answer(msg, reply_markup=main_reply_keyboard(), parse_mode="HTML")
 
-
 @dp.message(Command("balance"))
 async def cmd_balance(message: types.Message):
     if TESTMODE:
@@ -64,7 +51,6 @@ async def cmd_balance(message: types.Message):
         await message.answer(f"Ваш баланс: <b>{bal}</b> запрос(ов).", parse_mode="HTML")
     else:
         await message.answer("Тестовый режим: баланс не ограничен.", parse_mode="HTML")
-
 
 @dp.message(Command("buy"))
 async def cmd_buy(message: types.Message):
@@ -80,17 +66,12 @@ async def cmd_buy(message: types.Message):
         await message.answer("Тестовый режим: оплата отключена.", parse_mode="HTML")
 
 
-@dp.message(F.text)
-async def handle_all(message: types.Message):
+
+# Обработка только валидных к запросу "Корнеслов" сообщений.
+@dp.message(lambda message: is_valid_korneslov_query(message.text or ""))
+async def handle_korneslov_query(message: types.Message):
     text = message.text or ""
     uid = message.from_user.id
-
-    if not is_valid_korneslov_query(text):
-        msg = HELP_FORMAT
-        if TESTMODE or not USE_TRIBUTE:
-            msg += "\n\n(Тестовый режим)"
-        await message.answer(msg, parse_mode="HTML")
-        return
 
     if not TESTMODE and USE_TRIBUTE:
         bal = get_balance(uid)
@@ -120,31 +101,9 @@ async def handle_all(message: types.Message):
         if TESTMODE or not USE_TRIBUTE:
             answer += "\n\n(Тестовый режим)"
         for part in split_message(answer):
-            ##print(f"BEFOR: {part}")
             part = re.sub(r'<br.*?>', '', part)
-            '''
-            part = html_escape_telegram(part)
-            check_html_balance(part)
-            for i, c in enumerate(part):
-                print("     DEBUG_REPR_HEXORD: ", i, hex(ord(c)), repr(c))
-            print("     DEBUG_REPR_PART:", repr(part[max(0, 101-30):101+30]))
-            ##print(f"AFTA: {part}")
-            '''
             await message.answer(part, parse_mode="HTML")
             await asyncio.sleep(2)
-        '''
-        for part in split_message(answer):
-            lines = part.split('\n')
-            for i, line in enumerate(lines):
-                if not line.strip():
-                    print(f"SKIP empty line {i}")
-                    continue
-                try:
-                    await message.answer(line+"\u200B", parse_mode="HTML")
-                except Exception as e:
-                    print(f"ERROR in line {i}: {repr(line)}")
-                    raise e
-        '''
     except Exception as e:
         logging.exception(e)
         if not TESTMODE and USE_TRIBUTE:

@@ -1,5 +1,9 @@
 import re
 
+## Dummy for Statistika button
+def get_statistics_text() -> str:
+    return "STATISTICA."
+
 def escape_markdown_v2_DEL(text: str) -> str:
     """
     Экранирует спецсимволы для Telegram MarkdownV2.
