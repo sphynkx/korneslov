@@ -322,7 +322,7 @@ async def ask_openai_DUMMY(book, chapter, verse, test_banner="", followup=None):
     return dummy_openai_response(book, chapter, verse, test_banner, followup)
 
 
-##DUMMY_TEXT = True
 ##
-DUMMY_TEXT = False
+DUMMY_TEXT = True
+##DUMMY_TEXT = False
 
