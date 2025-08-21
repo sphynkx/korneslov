@@ -9,7 +9,8 @@ from db import init_db, get_balance, dec_balance, add_balance
 from korneslov import is_valid_korneslov_query, parse_reference, fetch_full_korneslov_response
 from utils import split_message
 from texts.prompts import HELP_FORMAT
-from menu import router, main_reply_keyboard
+from menu import router, main_reply_keyboard, get_user_state
+import json
 
 logging.basicConfig(level=logging.INFO)
 
@@ -18,8 +19,6 @@ dp = Dispatcher()
 dp.include_router(router)
 
 init_db()
-
-
 
 def pay_keyboard_for(uid: int) -> InlineKeyboardMarkup:
     url = f"{TRIBUTE_PRODUCT_10_URL}?uid={uid}&pid={TRIBUTE_PRODUCT_10_ID}"
@@ -32,15 +31,24 @@ def pay_keyboard_for(uid: int) -> InlineKeyboardMarkup:
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    msg = (
+    # Присваиваем дефолты при старте
+    state = get_user_state(message.from_user.id)
+    state["method"] = "korneslov"
+    state["direction"] = "masoret"
+    state["level"] = "hard"
+    state["lang"] = "russian"
+
+    msg_text = (
         "Привет! Я бот метода «Корнеслов». "
         "Отправь запрос в формате:\n\n<b>Корнеслов Книга Глава:Стих</b>\n\n"
         "Напр.: <i>Корнеслов Бытие 1:1</i>\n\n"
         "Баланс: /balance\nКупить пакеты: /buy"
+        f"\n\nТвой user_id: <code>{message.from_user.id}</code>"
+        f"\n<b>Текущее состояние:</b>\n<code>{json.dumps(state, ensure_ascii=False)}</code>"
     )
     if TESTMODE:
-        msg += "\n\n<b>Тестовый режим: оплата и баланс отключены.</b>"
-    await message.answer(msg, reply_markup=main_reply_keyboard(), parse_mode="HTML")
+        msg_text += "\n\n<b>Тестовый режим: оплата и баланс отключены.</b>"
+    await message.answer(msg_text, reply_markup=main_reply_keyboard(), parse_mode="HTML")
 
 @dp.message(Command("balance"))
 async def cmd_balance(message: types.Message):
@@ -65,13 +73,13 @@ async def cmd_buy(message: types.Message):
     else:
         await message.answer("Тестовый режим: оплата отключена.", parse_mode="HTML")
 
-
-
 # Обработка только валидных к запросу "Корнеслов" сообщений.
 @dp.message(lambda message: is_valid_korneslov_query(message.text or ""))
 async def handle_korneslov_query(message: types.Message):
     text = message.text or ""
     uid = message.from_user.id
+    # Можно использовать user_state если нужно (например, для расширения логики)
+    state = get_user_state(uid)
 
     if not TESTMODE and USE_TRIBUTE:
         bal = get_balance(uid)
