@@ -1,6 +1,8 @@
 from aiogram import Router, types
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 import json
+from utils import get_statistics_text
+
 
 router = Router()
 
@@ -90,8 +92,8 @@ def language_menu():
 async def handle_korneslov(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     state["method"] = "korneslov"
-    state["direction"] = None
-    state["level"] = None
+    ##state["direction"] = None
+    ##state["level"] = None
     await msg.answer(
         f"Выберите подменю Корнеслова:\n\nТекущее состояние:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         reply_markup=korneslov_menu(), parse_mode="HTML"
@@ -101,7 +103,7 @@ async def handle_korneslov(msg: types.Message):
 async def handle_masoret(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     state["direction"] = "masoret"
-    state["level"] = None
+    ##state["level"] = None
     await msg.answer(
         f"Масорет — выберите действие:\n\nТекущее состояние:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         reply_markup=masoret_menu(), parse_mode="HTML"
@@ -111,7 +113,7 @@ async def handle_masoret(msg: types.Message):
 async def handle_rishi(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     state["direction"] = "rishi"
-    state["level"] = None
+    ##state["level"] = None
     await msg.answer(
         f"Rishi — выберите действие:\n\nТекущее состояние:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         reply_markup=rishi_menu(), parse_mode="HTML"
@@ -155,6 +157,20 @@ async def handle_back_to_main(msg: types.Message):
 @router.message(lambda m: m.text == "Назад к Корнеслову")
 async def handle_back_to_korneslov(msg: types.Message):
     await msg.answer("Корнеслов:", reply_markup=korneslov_menu())
+
+
+
+@router.message(lambda m: m.text == "Справка")
+async def handle_back_to_korneslov(msg: types.Message):
+    await msg.answer("HELPA!!")
+
+
+
+## Dummy-handler for Statisticx button - implement request to ext.func.
+@router.message(lambda m: m.text == "Статистика")
+async def handle_statistika(msg: types.Message):
+    await msg.answer(get_statistics_text(), parse_mode="HTML")
+
 
 @router.message()
 async def echo(msg: types.Message):

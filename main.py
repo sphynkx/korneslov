@@ -20,6 +20,8 @@ dp.include_router(router)
 
 init_db()
 
+
+
 def pay_keyboard_for(uid: int) -> InlineKeyboardMarkup:
     url = f"{TRIBUTE_PRODUCT_10_URL}?uid={uid}&pid={TRIBUTE_PRODUCT_10_ID}"
     kb = InlineKeyboardMarkup(
