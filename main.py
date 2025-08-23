@@ -43,10 +43,11 @@ async def cmd_start(message: types.Message):
 
     msg_text = (
         "Привет! Я бот метода «Корнеслов». "
-        "Отправь запрос в формате:\n\n<b>Корнеслов Книга Глава:Стих</b>\n\n"
+        "Выберите доступные опции в меню ниже. Если меню не отображено, нажмите на значок квадрата с точками справа внизу. "
+        "Для разбора текста нажмите на кнопку \"Корнеслов\" и выберите нужные опции в его подменю. Затем отправьте запрос в формате:\n\n<b>Корнеслов Книга Глава:Стих</b>\n\n"
         "Напр.: <i>Корнеслов Бытие 1:1</i>\n\n"
-        "Баланс: /balance\nКупить пакеты: /buy"
-        f"\n\nCurrent user_id: <code>{message.from_user.id}</code>"
+        "\nБаланс: /balance\nКупить пакеты: /buy"
+        f"\n\n______________\nCurrent user_id: <code>{message.from_user.id}</code>"
         f"\n<b>Current state:</b>\n<code>{json.dumps(state, ensure_ascii=False)}</code>"
     )
     if TESTMODE:

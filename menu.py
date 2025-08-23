@@ -46,7 +46,7 @@ def korneslov_menu():
     kb = [
         [
             KeyboardButton(text="Масорет"),
-            KeyboardButton(text="Rishi"),
+            KeyboardButton(text="Риши"),
         ],
         [
             KeyboardButton(text="Назад в главное меню")
@@ -116,7 +116,15 @@ async def handle_korneslov(msg: types.Message):
     ##state["direction"] = None
     ##state["level"] = None
     await msg.answer(
-        f"Выберите подменю Корнеслова:\n\nТекущее состояние:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
+        f"""Выберите доступные опции в меню ниже. Если меню не отображено, нажмите на значок квадрата с точками справа внизу. Доступные направления:
+ • <b>Масорет</b> - исследования ветхозаветного текста (древний иврит).
+ • <b>Риши</b> - исследования текстов на санскрите: Shrimad Bhagavatam/Шримад Бхагаватам..
+ • <b>Что-то еще</b> - что-нибудь еще..
+\nВ каждом направлении есть подпункты для выбора уровня сложности разбора.
+
+______________
+Current state:
+<code>{json.dumps(state, ensure_ascii=False)}</code>""",
         reply_markup=korneslov_menu(), parse_mode="HTML"
     )
 
@@ -127,18 +135,38 @@ async def handle_masoret(msg: types.Message):
     state["direction"] = "masoret"
     ##state["level"] = None
     await msg.answer(
-        f"Масорет — выберите действие:\n\nТекущее состояние:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
+        f"""<b>Масорет</b> — выберите уровень сложности анализа:
+Ответ может состоять из неполного набора доступных частей (0-3). Имеющиеся части разбора:
+— <b>Часть 0 — Текст строки</b>
+— <b>Часть 1 — Детальная справка по каждому слову</b>
+— <b>Часть 2 — Список слов со значениями базовых корней</b>
+— <b>Часть 3 — Цепочки базовых значений</b>
+
+Та или иная совокупность частей выводится в зависимости от выбранного уровня сложности. Доступны следующие уровни:
+• <b>Поугарать</b> - Простой разбор. Выводятся части 0 и 3.
+• <b>Подробнее</b> - Более сложный разбор. Выводятся части 0, 2 и 3.
+• <b>Академично</b> - Максимально глубокий и основательный разбор. Выводятся все части - 0, 1, 2 и 3.
+
+
+После выбора уровня сложности не забудьте отправить запрос. Напишите его в формте:
+
+<b>Корнеслов Книга Глава:Стих</b>
+
+Напр.: Корнеслов Бытие 1:1
+
+______________
+Current state:\n<code>{json.dumps(state, ensure_ascii=False)}</code>""",
         reply_markup=masoret_menu(), parse_mode="HTML"
     )
 
 
-@router.message(lambda m: m.text == "Rishi")
+@router.message(lambda m: m.text == "Риши")
 async def handle_rishi(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     state["direction"] = "rishi"
     ##state["level"] = None
     await msg.answer(
-        f"Rishi — выберите действие:\n\nТекущее состояние:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
+        f"Риши — выберите действие:\n\n______________\nCurrent state:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         reply_markup=rishi_menu(), parse_mode="HTML"
     )
 
@@ -158,7 +186,7 @@ async def handle_level_choice(msg: types.Message):
     }
     state["level"] = level_map.get(msg.text, "hard")
     await msg.answer(
-        f"Установлен уровень: {msg.text}\n\nТекущее состояние:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
+        f"Установлен уровень: {msg.text}\n\n______________\nCurrent state:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         parse_mode="HTML"
     )
 
@@ -167,7 +195,7 @@ async def handle_level_choice(msg: types.Message):
 async def handle_language(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     await msg.answer(
-        f"Выберите язык:\n\nТекущее состояние:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
+        f"Выберите язык:\n\n______________\nCurrent state:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         reply_markup=language_menu(), parse_mode="HTML"
     )
 
@@ -177,7 +205,7 @@ async def handle_language_english(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     state["lang"] = "english"
     await msg.answer(
-        f"Язык установлен: english\n\nТекущее состояние:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
+        f"Язык установлен: english\n\n______________\nCurrent state:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         parse_mode="HTML"
     )
 
