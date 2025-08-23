@@ -1,6 +1,6 @@
 """
 Allowed tags: <b>, <i>, <u>, <s>, <a href="...">, <code>, <pre>
-Lista: 
+Lista:
 <b>1.</b> List element<br>
 <b>2.</b> Second element<br>
 """
@@ -69,6 +69,7 @@ LEVEL_SAMPLES = {
 """
 }
 
+## Initial working prompt - before levels implementation - BKP.
 KORNESLOV_SYSTEM_PROMPT_ISX = """
 Метод «Корнеслов» — подробное описание
 
@@ -174,7 +175,7 @@ KORNESLOV_SYSTEM_PROMPT_ISX = """
 
 
 
-
+## My prompt with levels - BKP.
 KORNESLOV_SYSTEM_PROMPT_MY = """
 Метод «Корнеслов» — подробное описание
 
@@ -279,7 +280,7 @@ KORNESLOV_SYSTEM_PROMPT_MY = """
 
 
 
-
+## Prompt with levels (your variant) - working need to leave as actual!!
 KORNESLOV_SYSTEM_PROMPT = """
 Метод «Корнеслов» — подробное описание
 
@@ -360,16 +361,16 @@ KORNESLOV_SYSTEM_PROMPT = """
 <b>ВНИМАНИЕ:</b>
 — Используй только HTML-разметку (https://core.telegram.org/bots/api#html-style)
 — Не используй никакую Markdown или MarkdownV2-разметку.
-— Для жирного используйте только &lt;b&gt;...&lt;/b&gt;, для курсива — &lt;i&gt;...&lt;/i&gt;, для подчеркивания — &lt;u&gt;...&lt;/u&gt;.
-— Для переноса строки — только &lt;br&gt;.
+— Для жирного используйте только <b>...</b>, для курсива — <i>...</i>, для подчеркивания — <u>...</u>.
+— Для переноса строки — только <br>.
 — Не используй теги, не поддерживаемые Telegram Bot API.
-— Всегда делай структурное деление частей через &lt;b&gt;...&lt;/b&gt; и &lt;br&gt;.
+— Всегда делай структурное деление частей через <b>...</b> и <br>.
 """
 
 
 
 
-
+## Imitate OpeAI response with this text when DUMMY_TEXT = True (korneslov.py)
 dummy_text = """DEBUGA: *Часть 0 — Исходный стих*
 וְהַנָּחָשׁ הָיָה עָרוּם מִכֹּל חַיַּת הַשָּׂדֶה אֲשֶׁר עָשָׂה יְהוָה אֱלֹהִים וַיֹּאמֶר אֶל־הָאִשָּׁה אַף כִּי אָמַר אֱלֹהִים לֹא תֹאכְלוּ מִכֹּל עֵץ הַגָּן
 

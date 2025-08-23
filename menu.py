@@ -3,11 +3,12 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 import json
 from utils import get_statistics_text
 
-
 router = Router()
 
-# User-state: user_id -> dict
+## User-state: user_id -> dict
+## Store current method, direction, level and language for separate user.
 user_state = {}
+
 
 def get_user_state(user_id):
     default = {
@@ -20,13 +21,14 @@ def get_user_state(user_id):
         user_state[user_id] = default.copy()
     return user_state[user_id]
 
+
 def main_reply_keyboard():
     kb = [
         [
             KeyboardButton(text="Корнеслов Бытие 1:1"),
             KeyboardButton(text="Корнеслов Бытие 3:1"),
             KeyboardButton(text="Корнеслов Иоанна 11:35")
-        ],
+        ], ## Test buttons. To remove.
         [
             KeyboardButton(text="Language"),
             KeyboardButton(text="Корнеслов")
@@ -39,6 +41,7 @@ def main_reply_keyboard():
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
+
 def korneslov_menu():
     kb = [
         [
@@ -50,6 +53,7 @@ def korneslov_menu():
         ]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+
 
 def masoret_menu():
     kb = [
@@ -64,6 +68,7 @@ def masoret_menu():
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
+
 def rishi_menu():
     kb = [
         [
@@ -77,6 +82,20 @@ def rishi_menu():
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
+
+def oplata_menu():
+    kb = [
+        [
+            KeyboardButton(text="/buy"),
+            KeyboardButton(text="/balance"),
+        ],
+        [
+            KeyboardButton(text="Назад в главное меню")
+        ]
+    ]
+    return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+
+
 def language_menu():
     kb = [
         [
@@ -88,16 +107,19 @@ def language_menu():
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
+
 @router.message(lambda m: m.text == "Корнеслов")
 async def handle_korneslov(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     state["method"] = "korneslov"
+    ## Buggy - sets values to null. Below are identical.
     ##state["direction"] = None
     ##state["level"] = None
     await msg.answer(
         f"Выберите подменю Корнеслова:\n\nТекущее состояние:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         reply_markup=korneslov_menu(), parse_mode="HTML"
     )
+
 
 @router.message(lambda m: m.text == "Масорет")
 async def handle_masoret(msg: types.Message):
@@ -109,6 +131,7 @@ async def handle_masoret(msg: types.Message):
         reply_markup=masoret_menu(), parse_mode="HTML"
     )
 
+
 @router.message(lambda m: m.text == "Rishi")
 async def handle_rishi(msg: types.Message):
     state = get_user_state(msg.from_user.id)
@@ -118,6 +141,12 @@ async def handle_rishi(msg: types.Message):
         f"Rishi — выберите действие:\n\nТекущее состояние:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         reply_markup=rishi_menu(), parse_mode="HTML"
     )
+
+
+@router.message(lambda m: m.text == "Оплата")
+async def handle_oplata(msg: types.Message):
+    await msg.answer("Оплата:", reply_markup=oplata_menu())
+
 
 @router.message(lambda m: m.text in ["Поугарать", "Подробнее", "Академично"])
 async def handle_level_choice(msg: types.Message):
@@ -133,6 +162,7 @@ async def handle_level_choice(msg: types.Message):
         parse_mode="HTML"
     )
 
+
 @router.message(lambda m: m.text == "Language")
 async def handle_language(msg: types.Message):
     state = get_user_state(msg.from_user.id)
@@ -140,6 +170,7 @@ async def handle_language(msg: types.Message):
         f"Выберите язык:\n\nТекущее состояние:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         reply_markup=language_menu(), parse_mode="HTML"
     )
+
 
 @router.message(lambda m: m.text == "English")
 async def handle_language_english(msg: types.Message):
@@ -150,20 +181,21 @@ async def handle_language_english(msg: types.Message):
         parse_mode="HTML"
     )
 
+
 @router.message(lambda m: m.text == "Назад в главное меню")
 async def handle_back_to_main(msg: types.Message):
     await msg.answer("Главное меню", reply_markup=main_reply_keyboard())
+
 
 @router.message(lambda m: m.text == "Назад к Корнеслову")
 async def handle_back_to_korneslov(msg: types.Message):
     await msg.answer("Корнеслов:", reply_markup=korneslov_menu())
 
 
-
+## Dummy - for further realizations..
 @router.message(lambda m: m.text == "Справка")
 async def handle_back_to_korneslov(msg: types.Message):
     await msg.answer("HELPA!!")
-
 
 
 ## Dummy-handler for Statisticx button - implement request to ext.func.

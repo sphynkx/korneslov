@@ -6,9 +6,12 @@ from db import add_balance
 
 app = Flask(__name__)
 
+
+
 def verify_signature(raw_body, signature):
     digest = hmac.new(TRIBUTE_WEBHOOK_SECRET.encode(), raw_body, hashlib.sha256).hexdigest()
     return hmac.compare_digest(digest, signature or "")
+
 
 @app.route("/tribute_webhook", methods=["POST"])
 def tribute_webhook():
@@ -32,6 +35,7 @@ def tribute_webhook():
         return jsonify({"status": "ok", "telegram_id": telegram_id, "queries_added": QUERIES_FOR_10}), 200
 
     return jsonify({"status": "unknown product"}), 200
+
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8000)

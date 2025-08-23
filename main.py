@@ -31,6 +31,7 @@ def pay_keyboard_for(uid: int) -> InlineKeyboardMarkup:
     )
     return kb
 
+
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
     # Присваиваем дефолты при старте
@@ -45,12 +46,13 @@ async def cmd_start(message: types.Message):
         "Отправь запрос в формате:\n\n<b>Корнеслов Книга Глава:Стих</b>\n\n"
         "Напр.: <i>Корнеслов Бытие 1:1</i>\n\n"
         "Баланс: /balance\nКупить пакеты: /buy"
-        f"\n\nТвой user_id: <code>{message.from_user.id}</code>"
-        f"\n<b>Текущее состояние:</b>\n<code>{json.dumps(state, ensure_ascii=False)}</code>"
+        f"\n\nCurrent user_id: <code>{message.from_user.id}</code>"
+        f"\n<b>Current state:</b>\n<code>{json.dumps(state, ensure_ascii=False)}</code>"
     )
     if TESTMODE:
         msg_text += "\n\n<b>Тестовый режим: оплата и баланс отключены.</b>"
     await message.answer(msg_text, reply_markup=main_reply_keyboard(), parse_mode="HTML")
+
 
 @dp.message(Command("balance"))
 async def cmd_balance(message: types.Message):
@@ -61,6 +63,7 @@ async def cmd_balance(message: types.Message):
         await message.answer(f"Ваш баланс: <b>{bal}</b> запрос(ов).", parse_mode="HTML")
     else:
         await message.answer("Тестовый режим: баланс не ограничен.", parse_mode="HTML")
+
 
 @dp.message(Command("buy"))
 async def cmd_buy(message: types.Message):
@@ -75,13 +78,14 @@ async def cmd_buy(message: types.Message):
     else:
         await message.answer("Тестовый режим: оплата отключена.", parse_mode="HTML")
 
-# Обработка только валидных к запросу "Корнеслов" сообщений.
+
+## Handle valid requests only.
 @dp.message(lambda message: is_valid_korneslov_query(message.text or ""))
 async def handle_korneslov_query(message: types.Message):
     text = message.text or ""
     uid = message.from_user.id
-    # Можно использовать user_state если нужно (например, для расширения логики)
     state = get_user_state(uid)
+    level = state.get("level", "hard")
 
     if not TESTMODE and USE_TRIBUTE:
         bal = get_balance(uid)
@@ -105,8 +109,9 @@ async def handle_korneslov_query(message: types.Message):
 
     book, chap, verse = parse_reference(text)
     try:
+        ## Implement levels
         answer = await fetch_full_korneslov_response(
-            book, chap, verse
+            book, chap, verse, level=level
         )
         if TESTMODE or not USE_TRIBUTE:
             answer += "\n\n(Тестовый режим)"
@@ -119,6 +124,7 @@ async def handle_korneslov_query(message: types.Message):
         if not TESTMODE and USE_TRIBUTE:
             add_balance(uid, 1)
         await message.answer("Произошла ошибка генерации. Повторите запрос позже.", parse_mode="HTML")
+
 
 async def main():
     await dp.start_polling(bot)
