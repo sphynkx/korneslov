@@ -4,6 +4,7 @@ from config import get_model_and_params, OPENAI_API_KEY, TESTMODE, USE_TRIBUTE, 
 from openai import AsyncOpenAI
 from utils import is_truncated
 from texts.prompts import *
+from texts.dummy_texts import *
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
