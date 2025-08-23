@@ -21,7 +21,7 @@ KORNESLOV_USER_PROMPT = "Корнеслов {book} {chapter}:{verse}"
 
 ## Level substitution
 LEVELS = {
-    "light": "3",
+    "light": "0, 3",
     "smart": "0, 2, 3",
     "hard": "0, 1, 2, 3"
 }
