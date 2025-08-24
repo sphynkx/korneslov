@@ -34,13 +34,14 @@ def pay_keyboard_for(uid: int) -> InlineKeyboardMarkup:
 
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message):
-    # Присваиваем дефолты при старте
+    ## Set defaults on start
     state = get_user_state(message.from_user.id)
     state["method"] = "korneslov"
     state["direction"] = "masoret"
     state["level"] = "hard"
-    state["lang"] = "russian"
+    state["lang"] = "ru"
 
+    ## TODO: move to messages!!
     msg_text = (
         "Привет! Я бот метода «Корнеслов». "
         "Выберите доступные опции в меню ниже. Если меню не отображено, нажмите на значок квадрата с точками справа внизу. "

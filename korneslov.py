@@ -8,7 +8,8 @@ from texts.dummy_texts import *
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
-KORNESLOV_RE = re.compile(r'^Корнеслов\s+([^\s]+)\s+(\d+):(\d+)$', re.IGNORECASE)
+KORNESLOV_RE_RU = re.compile(r'^Корнеслов\s+([^\s]+)\s+(\d+):(\d+)$', re.IGNORECASE)
+KORNESLOV_RE_EN = re.compile(r'^Korneslov\s+([^\s]+)\s+(\d+):(\d+)$', re.IGNORECASE)
 
 
 ##DUMMY_TEXT = True
@@ -23,12 +24,18 @@ def dummy_openai_response(book, chapter, verse, test_banner="", followup=None, d
     return f"Корнеслов {book} {chapter}:{verse}\n{dummy_text}"
 
 
-def is_valid_korneslov_query(text: str):
+def is_valid_korneslov_query_NOi18n(text: str):
     return bool(KORNESLOV_RE.match(text.strip()))
 
 
+def is_valid_korneslov_query(text: str):
+    ## Catch both rus and eng requests.
+    text = text.strip()
+    return bool(KORNESLOV_RE_RU.match(text) or KORNESLOV_RE_EN.match(text))
+
+
 def parse_reference(text: str):
-    m = KORNESLOV_RE.match(text.strip())
+    m = KORNESLOV_RE_RU.match(text.strip()) or KORNESLOV_RE_EN.match(text.strip())
     if not m:
         return None, None, None
     book, chap, verse = m.group(1), int(m.group(2)), int(m.group(3))
