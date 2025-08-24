@@ -3,14 +3,12 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
 import json
 from utils import get_statistics_text
 from i18n.messages import tr
+from userstate import get_user_state
+
 
 router = Router()
 
-## User-state: user_id -> dict
-## Store current method, direction, level and language for separate user.
-user_state = {}
-
-
+'''
 def get_user_state(user_id):
     default = {
         "method": "korneslov",
@@ -21,7 +19,7 @@ def get_user_state(user_id):
     if user_id not in user_state:
         user_state[user_id] = default.copy()
     return user_state[user_id]
-
+'''
 
 def main_reply_keyboard(msg=None):
     kb = [

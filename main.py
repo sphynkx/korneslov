@@ -9,7 +9,8 @@ from db import init_db, get_balance, dec_balance, add_balance
 from korneslov import is_valid_korneslov_query, parse_reference, fetch_full_korneslov_response
 from utils import split_message
 from texts.prompts import HELP_FORMAT
-from menu import router, main_reply_keyboard, get_user_state
+from menu import router, main_reply_keyboard
+from userstate import get_user_state
 import json
 
 logging.basicConfig(level=logging.INFO)

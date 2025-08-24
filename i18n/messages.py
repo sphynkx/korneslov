@@ -1,4 +1,4 @@
-from menu import get_user_state
+from userstate import get_user_state
 
 MESSAGES = {
     "ru": {
