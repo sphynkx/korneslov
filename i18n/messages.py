@@ -2,6 +2,21 @@ from userstate import get_user_state
 
 MESSAGES = {
     "ru": {
+        "start": {
+            "start_bot": """Привет! Я бот метода «Корнеслов».
+Выберите доступные опции в меню ниже. Если меню не отображено, нажмите на значок квадрата с точками справа внизу.
+Для разбора текста нажмите на кнопку "Корнеслов" и выберите нужные опции в его подменю. Затем отправьте запрос в формате:
+
+<b>Корнеслов Книга Глава:Стих</b>
+
+Напр.: <i>Корнеслов Бытие 1:1</i>
+
+Баланс: /balance
+Купить пакеты: /buy
+            """,
+            "testmode_banner": "\n\n<b>Тестовый режим: оплата и баланс отключены.</b>",
+        },
+
         "main_menu": {
             "welcome": "Добро пожаловать! Выберите действие:",
             "test1": "Корнеслов Бытие 1:1",
@@ -45,14 +60,13 @@ ______________"""
 • <b>Подробнее</b> - Более сложный разбор. Выводятся части 0, 2 и 3.
 • <b>Академично</b> - Максимально глубокий и основательный разбор. Выводятся все части - 0, 1, 2 и 3.
 
-После выбора уровня сложности не забудьте отправить запрос. Напишите его в формте:
+После выбора уровня сложности не забудьте отправить запрос. Напишите его в формате:
 
 <b>Корнеслов Книга Глава:Стих</b>
 
 Напр.: Корнеслов Бытие 1:1
 
-______________"""
-,
+______________""",
             "level_set": "Установлен уровень"
         },
         "rishi_menu": {
@@ -70,9 +84,36 @@ ______________"""
             "english": "English",
             "back_to_main": "Назад в главное меню",
             "set_to_english": "Язык установлен: english"
-        }
+        },
+        "tribute": {
+            "pay_keyboard_for": "Купить 10 запросов",
+            "testmode": "Тестовый режим: баланс не ограничен.",
+            "use_tribute": "Ваш баланс: <b>{bal}</b> запрос(ов).",
+            "no_use_tribute": "Тестовый режим: баланс не ограничен.",
+            "cmd_buy_testmode": "Тестовый режим: оплата отключена.",
+            "cmd_buy_use_tribute": "Выберите пакет. Оплата через Tribute.",
+            "cmd_buy_no_use_tribute": "Тестовый режим: оплата отключена.",
+            "handle_korneslov_query_no_testmode_use_tribute": "❌ У вас нет доступных запросов.\nПожалуйста, пополните баланс:", ## used twice
+            "handle_korneslov_query_testmode_no_use_tribute": "\n\n(Тестовый режим)",
+            "handle_korneslov_query_exception": "Произошла ошибка генерации. Повторите запрос позже.",
+        },
+        "korneslov_py": {
+            "regexp": r'^Корнеслов\s+([^\s]+)\s+(\d+):(\d+)$',
+            "dummy_openai_response_return": "Корнеслов {book} {chapter}:{verse}\n{dummy_text}",
+            "ask_openai_no_OPENAI_API_KEY": "Корнеслов {book} {chapter}:{verse}\n(Ошибка: не указан ключ OpenAI или не установлен пакет openai){test_banner}",
+            "ask_openai_return": "Корнеслов", ## inserted into f-string
+            "ask_openai_exception_logging": "Ошибка при обращении к OpenAI",
+            "ask_openai_exception_return": "Корнеслов {book} {chapter}:{verse}\n(Ошибка обращения к ChatGPT. Попробуйте позже.)",
+        },
+        "utils_py": {
+            "is_truncated_regexp": r"Часть.*?3",
+        },
     },
     "en": {
+        "start": {
+            "start_bot": "StartBot message",
+            "testmode_banner": "\n\n<b>Test mode: payment and balance are disabled.</b>",
+            },
         "main_menu": {
             "welcome": "Welcome! Choose an action:",
             "test1": "Korneslov Genesis 1:1",
@@ -122,8 +163,7 @@ After choosing a level, send your request like:
 
 Example: Korneslov Genesis 1:1
 
-______________"""
-,
+______________""",
             "level_set": "Level set"
         },
         "rishi_menu": {
@@ -141,9 +181,33 @@ ______________"""
             "english": "English",
             "back_to_main": "Back to main menu",
             "set_to_english": "Language set to: english"
-        }
+        },
+        "tribute": {
+            "pay_keyboard_for": "Buy 10 requests",
+            "testmode": "Test mode: unlimited balance.",
+            "use_tribute": "Your balance: <b>{bal}</b> request(s).",
+            "no_use_tribute": "Test mode: unlimited balance.",
+            "cmd_buy_testmode": "Test mode: payment disabled.",
+            "cmd_buy_use_tribute": "Choose package. Payment via Tribute.",
+            "cmd_buy_no_use_tribute": "Test mode: unlimited balance.",
+            "handle_korneslov_query_no_testmode_use_tribute": "❌ Ypu have not available requests.\nPlease recharge your balance:", ## used twice
+            "handle_korneslov_query_testmode_no_use_tribute": "\n\n(Test mode)",
+            "handle_korneslov_query_exception": "A generation error occurred. Please try again later.",
+        },
+        "korneslov_py": {
+            "regexp": r'^Korneslov\s+([^\s]+)\s+(\d+):(\d+)$',
+            "dummy_openai_response_return": "Korneslov {book} {chapter}:{verse}\n{dummy_text}",
+            "ask_openai_no_OPENAI_API_KEY": "Korneslov {book} {chapter}:{verse}\n(Error: No OpenAI key specified or openai package not installed){test_banner}",
+            "ask_openai_return": "Korneslov", ## inserted into f-string
+            "ask_openai_exception_logging": "OpenAI request failed",
+            "ask_openai_exception_return": "Korneslov {book} {chapter}:{verse}\n(Error during request to ChatGPT. Try later.)",
+        },
+        "utils_py": {
+            "is_truncated_regexp": r"Part.*?3",
+        },
     }
 }
+
 
 def tr(key, msg=None, user_id=None, default_lang="ru", **kwargs):
     ## Define user_id from msg (if sent), of from param, else fallback

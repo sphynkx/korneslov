@@ -1,15 +1,18 @@
 import re
 import logging
-from config import get_model_and_params, OPENAI_API_KEY, TESTMODE, USE_TRIBUTE, OPENAI_MODEL, OPENAI_MODEL_PARAMS
+from config import get_model_and_params, OPENAI_API_KEY, TESTMODE, USE_TRIBUTE
 from openai import AsyncOpenAI
 from utils import is_truncated
 from texts.prompts import *
 from texts.dummy_texts import *
+from i18n.messages import tr
+from userstate import get_user_state
+
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
-KORNESLOV_RE_RU = re.compile(r'^Корнеслов\s+([^\s]+)\s+(\d+):(\d+)$', re.IGNORECASE)
-KORNESLOV_RE_EN = re.compile(r'^Korneslov\s+([^\s]+)\s+(\d+):(\d+)$', re.IGNORECASE)
+KORNESLOV_RE_RU = re.compile(tr("korneslov_py.regexp", default_lang="ru"), re.IGNORECASE)
+KORNESLOV_RE_EN = re.compile(tr("korneslov_py.regexp", default_lang="en"), re.IGNORECASE)
 
 
 ##DUMMY_TEXT = True
@@ -20,12 +23,10 @@ DUMMY_TEXT = False
 
 ########### DUMMY ###########
 def dummy_openai_response(book, chapter, verse, test_banner="", followup=None, dummy_text=dummy_text):
+    if dummy_text is None:
+        dummy_text = "Dummy-text not found!!"
     if test_banner: dummy_text += test_banner
-    return f"Корнеслов {book} {chapter}:{verse}\n{dummy_text}"
-
-
-def is_valid_korneslov_query_NOi18n(text: str):
-    return bool(KORNESLOV_RE.match(text.strip()))
+    return tr("korneslov_py.dummy_openai_response_return", book=book, chapter=chapter, verse=verse, dummy_text=dummy_text)
 
 
 def is_valid_korneslov_query(text: str):
@@ -55,19 +56,19 @@ def build_korneslov_prompt(book, chapter, verse, level_key):
     )
 
 
-async def fetch_full_korneslov_response(book, chapter, verse, level="hard", max_loops=5):
+async def fetch_full_korneslov_response(book, chapter, verse, uid, level="hard", max_loops=5):
     """
     Receives full response by Korneslov method and making follow-up requests if need.
     """
     async def gen_func(book, chapter, verse, system_prompt, followup=None):
-        return await ask_openai(book, chapter, verse, system_prompt=system_prompt, followup=followup)
+        return await ask_openai(uid, book, chapter, verse, system_prompt=system_prompt, followup=followup)
 
     ## Now try to add level handle mech.
     system_prompt = build_korneslov_prompt(book, chapter, verse, level)
 
     answer = await gen_func(book, chapter, verse, system_prompt=system_prompt, followup=None)
 
-    ## Permit false repeates - no need followup if "Часть 3" is present already and rest checks
+    ## Permit false repeates - no need followup if "Chastj 3" is present already and rest checks
     if not is_truncated(answer):
         return answer  ## If present - return immidiatelly w/o any followups
 
@@ -82,36 +83,15 @@ async def fetch_full_korneslov_response(book, chapter, verse, level="hard", max_
     return "\n\n".join(all_answers)
 
 
-async def generate_korneslov_response(book, chapter, verse):
-    """
-    Logic:
-    - TESTMODE=True: always request to OpenAI, dont touch Tribute.
-    - TESTMODE=False:
-        - USE_TRIBUTE=False: return dummy, dont touch OpenAI.
-        - USE_TRIBUTE=True: normal mode - work with both OpenAI andTribute.
-    """
-    if TESTMODE:
-        return await ask_openai(book, chapter, verse, test_banner="(Тестовый режим: Tribute отключён)")
-    elif not USE_TRIBUTE:
-        return f"Корнеслов {book} {chapter}:{verse}\n(Заглушка: доступен только в платном режиме)"
-    else:
-        return await ask_openai(book, chapter, verse)
-
-
-def build_prompt(template, book, chapter, verse):
-    """
-    Build prompt from template using .format().
-    """
-    return template.format(book=book, chapter=chapter, verse=verse)
-
-
 ## Real OpenAI request func
-async def ask_openai(book, chapter, verse, system_prompt=None, test_banner="", followup=None):
+async def ask_openai(uid, book, chapter, verse, system_prompt=None, test_banner="", followup=None):
     if DUMMY_TEXT:
-        return dummy_openai_response(book, chapter, verse, test_banner, followup)
+        state = get_user_state(uid)
+        lang = state.get("lang", "ru")
+        return dummy_openai_response(book, chapter, verse, test_banner, followup, dummy_text[lang])
 
     if not OPENAI_API_KEY:
-        return f"Корнеслов {book} {chapter}:{verse}\n(Ошибка: не указан ключ OpenAI или не установлен пакет openai){test_banner}"
+        return tr("korneslov_py.ask_openai_no_OPENAI_API_KEY", book=book, chapter=chapter, verse=verse, test_banner=test_banner)
 
     ## Now with levels..
     if not system_prompt:
@@ -138,12 +118,12 @@ async def ask_openai(book, chapter, verse, system_prompt=None, test_banner="", f
         response = await client.chat.completions.create(**params)
         text = response.choices[0].message.content.strip()
         print(f"DEBUGA: {text}")
-        return f"Корнеслов {book} {chapter}:{verse}\n{text}{f'\n{test_banner}' if test_banner else ''}"
+        return f"""{tr("korneslov_py.ask_openai_return")} {book} {chapter}:{verse}\n{text}{f'\n{test_banner}' if test_banner else ''}"""
+
     except Exception as e:
-        logging.exception("Ошибка при обращении к OpenAI")
+        logging.exception(tr("korneslov_py.ask_openai_exception_logging"))
         return (
-            f"Корнеслов {book} {chapter}:{verse}\n"
-            "(Ошибка обращения к ChatGPT. Попробуйте позже.)"
+            tr("korneslov_py.ask_openai_exception_return", book=book, chapter=chapter, verse=verse) + 
             f"{f'\n{test_banner}' if test_banner else ''}"
         )
 

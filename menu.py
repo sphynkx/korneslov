@@ -181,7 +181,7 @@ async def handle_language_menu(msg: types.Message):
     ## Swap language
     new_lang = "en" if current_lang == "ru" else "ru"
     state["lang"] = new_lang
-    print("После смены:", get_user_state(msg.from_user.id))
+    print("AFTA change:", get_user_state(msg.from_user.id))
     ## Send new menu with new keyboard and welcome-msg.
     await msg.answer(
         tr("main_menu.welcome", msg=msg),

@@ -1,9 +1,9 @@
 import re
-
+from i18n.messages import tr
 
 ## Dummy for Statistika button
 def get_statistics_text() -> str:
-    return "STATISTICA."
+    return "STATISTIKA."
 
 
 ## Split msgz for Teleram (with tiny heuristicx).
@@ -29,11 +29,11 @@ def split_message(text, max_length=4000):
 
 def is_truncated(answer: str, min_length=3500, ending_punct=('.','…','!','?', '>')):
     """
-    Heuristics: if response length is close to max_tokens * 4 (about 3000 tokens = 4000–4500 symbols), ans response doesnt end on any sentense ending sign then the response is probably cutted.
+    Heuristics: if response length is close to max_tokens * 4 (about 3000 tokens = 4000–4500 symbols), ans response doesnt end on any sentence ending sign then the response is probably cutted.
     """
     answer = answer.strip()
     ## Dirty hack - to permit false repeates and unneeded followups
-    if re.search(r"Часть.*?3", answer):
+    if re.search(tr("utils_py.is_truncated_regexp"), answer):
         return False
 
     long_enough = len(answer) >= min_length
