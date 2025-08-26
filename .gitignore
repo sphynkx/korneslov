@@ -5,7 +5,7 @@ __pycache__/
 !.env-sample
 env/
 venv/
-texts/
+texts/*
 !texts/.gitkeep
 config.py
 *.db
