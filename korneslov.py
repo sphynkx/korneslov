@@ -134,3 +134,4 @@ async def ask_openai(uid, book, chapter, verse, system_prompt=None, test_banner=
             tr("korneslov_py.ask_openai_exception_return", book=book, chapter=chapter, verse=verse, default_lang=lang) + 
             (f"\n{test_banner}" if test_banner else "")
         )
+
