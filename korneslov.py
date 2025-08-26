@@ -135,3 +135,4 @@ async def ask_openai(uid, book, chapter, verse, system_prompt=None, test_banner=
             (f"\n{test_banner}" if test_banner else "")
         )
 
+
