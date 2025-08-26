@@ -6,6 +6,7 @@ __pycache__/
 env/
 venv/
 texts/
+!texts/.empty
 config.py
 *.db
 *.sqlite3
