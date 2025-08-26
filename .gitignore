@@ -1,0 +1,11 @@
+_XLAM/
+__pycache__/
+.venv*
+.env*
+!.env-sample
+env/
+venv/
+texts/
+config.py
+*.db
+*.sqlite3

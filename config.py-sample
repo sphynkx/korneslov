@@ -1,0 +1,26 @@
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+DATABASE_FILE = os.getenv("DATABASE_FILE", "korneslov.db")
+TESTMODE = os.getenv("TESTMODE", "False").lower() == "true"
+USE_TRIBUTE = os.getenv("USE_TRIBUTE", "False").lower() == "true"
+TRIBUTE_WEBHOOK_SECRET = os.getenv("TRIBUTE_WEBHOOK_SECRET", "")
+TRIBUTE_PRODUCT_10_ID = os.getenv("TRIBUTE_PRODUCT_10_ID", "prod_10_requests")
+TRIBUTE_PRODUCT_10_URL = os.getenv("TRIBUTE_PRODUCT_10_URL", "")
+QUERIES_FOR_10 = int(os.getenv("QUERIES_FOR_10", "10"))
+
+
+OPENAI_MODEL = "gpt-5"
+OPENAI_MODEL_PARAMS = {
+    "gpt-4o-mini": {"max_tokens": 3000, "temperature": 0.7},
+    "gpt-4o": {"max_tokens": 3000, "temperature": 0.7},
+    "gpt-5": {},
+}
+def get_model_and_params():
+    from config import OPENAI_MODEL, OPENAI_MODEL_PARAMS
+    return OPENAI_MODEL, OPENAI_MODEL_PARAMS.get(OPENAI_MODEL, {})
+
