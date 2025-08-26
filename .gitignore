@@ -6,7 +6,7 @@ __pycache__/
 env/
 venv/
 texts/
-!texts/.empty
+!texts/.gitkeep
 config.py
 *.db
 *.sqlite3
