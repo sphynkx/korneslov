@@ -45,6 +45,8 @@ Go to  tribute.tg - to Tribute Admin Console and set "Webhook URL" as https://ko
 
 # App initial install
 ```
+cd /opt
+git clone https://github.com/sphynkx/rootster korneslov
 cd /opt/korneslov
 python3 -m venv .venv
 source .venv/bin/activate
@@ -52,6 +54,14 @@ sudo dnf install gcc python3-devel libffi-devel openssl-devel
 pip install --upgrade pip
 pip install -r requirements.txt
 ```
+
+If you have access to private repo:
+```
+cd texts
+git clone https://github.com/sphynkx/masoret
+```
+
+
 
 
 # Run app
