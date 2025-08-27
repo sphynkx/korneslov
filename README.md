@@ -57,8 +57,8 @@ pip install -r requirements.txt
 
 If you have access to private repo:
 ```
-cd texts
-git clone https://github.com/sphynkx/masoret
+cd /opt/korneslov
+git clone https://github.com/sphynkx/masoret texts
 ```
 
 
