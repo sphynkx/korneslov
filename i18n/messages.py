@@ -97,6 +97,9 @@ ______________""",
             "handle_korneslov_query_testmode_no_use_tribute": "\n\n(Тестовый режим)",
             "handle_korneslov_query_exception": "Произошла ошибка генерации. Повторите запрос позже.",
         },
+        "handle_korneslov_query": {
+            "query_format_error": "Неверный формат запроса. Пример: бытие 1 1-3,5",
+        },
         "korneslov_py": {
             "regexp": r'^Корнеслов\s+([^\s]+)\s+(\d+):(\d+)$',
             "dummy_openai_response_return": "Корнеслов {book} {chapter}:{verse}\n{dummy_text}",
@@ -193,6 +196,9 @@ ______________""",
             "handle_korneslov_query_no_testmode_use_tribute": "❌ Ypu have not available requests.\nPlease recharge your balance:", ## used twice
             "handle_korneslov_query_testmode_no_use_tribute": "\n\n(Test mode)",
             "handle_korneslov_query_exception": "A generation error occurred. Please try again later.",
+        },
+        "handle_korneslov_query": {
+            "query_format_error": "Query format error. Example: genesis 1 1-3,5",
         },
         "korneslov_py": {
             "regexp": r'^Korneslov\s+([^\s]+)\s+(\d+):(\d+)$',
