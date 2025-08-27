@@ -8,18 +8,6 @@ from utils.userstate import get_user_state
 
 router = Router()
 
-'''
-def get_user_state(user_id):
-    default = {
-        "method": "korneslov",
-        "direction": "masoret",
-        "level": "hard",
-        "lang": "ru"
-    }
-    if user_id not in user_state:
-        user_state[user_id] = default.copy()
-    return user_state[user_id]
-'''
 
 def main_reply_keyboard(msg=None):
     kb = [
