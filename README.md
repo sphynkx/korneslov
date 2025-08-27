@@ -62,6 +62,11 @@ git clone https://github.com/sphynkx/masoret texts
 ```
 
 
+## Bot install
+In Telegram go to @BotFather, send command `/newbot`. Input something for bot name and username (username must ends on "Bot" or "_bot"). After that BotFather creates new token. Place this token to `.env` as `TELEGRAM_BOT_TOKEN` param.
+
+Find recently created bot (search it in form @username_bot) and restart it. Then you'll see bot's keyboard - bot will ready to work.
+
 
 
 # Run app
@@ -168,7 +173,9 @@ sudo firewall-cmd --reload
 ```
 
 Return to server with application, check connection:
+```
 curl -x socks5h://proxyuser:********@EXT_IP_OF_PROXY_SERVER:1080 https://api.ipify.org
+```
 If response is EXT_IP_OF_PROXY_SERVER then everything is OK.
 
 Set variable `ALL_PROXY` in the `.env` with proxy parameters.

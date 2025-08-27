@@ -5,6 +5,7 @@ from openai import AsyncOpenAI
 from utils.utils import is_truncated
 from texts.prompts import *
 from texts.dummy_texts import *
+from texts.books_names import *
 from i18n.messages import tr
 from utils.userstate import get_user_state
 
@@ -22,16 +23,6 @@ DUMMY_TEXT = False
 
 
 ####### Move to utils ###############
-## List of known books (not full)
-## TODO: Move out of here.. Next - to DB.
-BOOKS_RU = [
-    "бытие", "исход", "левит", "числа", "второзаконие", "иоанна", "псалтирь", # и т.д.
-]
-BOOKS_EN = [
-    "genesis", "exodus", "leviticus", "numbers", "deuteronomy", "john", "psalms", # и т.д.
-]
-
-
 
 def _normalize_book(book):
     """Set to lowercase, remove extra spaces."""
@@ -76,21 +67,14 @@ def _book_regex(lang="ru"):
 
 
 
-########### DUMMY ###########
+## DUMMY then `DUMMY_TEXT = True`
 def dummy_openai_response(book, chapter, verse, test_banner="", followup=None, dummy_text=None):
     if dummy_text is None:
         dummy_text = "Dummy-text not found!!"
     if test_banner: dummy_text += test_banner
     return tr("korneslov_py.dummy_openai_response_return", book=book, chapter=chapter, verse=verse, dummy_text=dummy_text)
 
-## 2DEL
-def is_valid_korneslov_query_OLD(text: str):
-    ## Catch both rus and eng requests.
-    text = text.strip()
-    return bool(KORNESLOV_RE_RU.match(text) or KORNESLOV_RE_EN.match(text))
 
-
-##def is_valid_korneslov_query(text, lang="ru"):
 def is_valid_korneslov_query(message):
     """Check whether to parse string as request to Korneslov."""
     uid = message.from_user.id
@@ -99,15 +83,6 @@ def is_valid_korneslov_query(message):
     ##print(f"DBG is_valid_korneslov_query: {message.text=} ; {lang=}")
     refs = parse_references(message.text, lang)
     return bool(refs)
-
-
-## 2DEL
-def parse_reference_OLD(text: str):
-    m = KORNESLOV_RE_RU.match(text.strip()) or KORNESLOV_RE_EN.match(text.strip())
-    if not m:
-        return None, None, None
-    book, chap, verse = m.group(1), int(m.group(2)), int(m.group(3))
-    return book, chap, verse
 
 
 def parse_references(text, lang="ru"):
@@ -128,7 +103,7 @@ def parse_references(text, lang="ru"):
         re.IGNORECASE
     )
     result = []
-    ## TODO or not TODO^ May to add support of some requests in the one string.. (doubtful usefullness).
+    ## TODO or not TODO: May to add support of some requests in the one string.. (doubtful usefulness).
     m = pattern.match(text)
     if not m:
         return []
@@ -140,24 +115,6 @@ def parse_references(text, lang="ru"):
         return []
     result.append({"book": book, "chapter": chapter, "verses": verses})
     return result
-
-
-
-## 2DEL
-## Generate system_prompt with defined level and lang.
-def build_korneslov_prompt_OLD(book, chapter, verse, level_key, lang="ru"):
-    level_dict = LEVELS.get(lang, LEVELS["ru"])
-    level_str = level_dict.get(level_key, level_dict["hard"])
-    level_sample_dict = LEVEL_SAMPLES.get(lang, LEVEL_SAMPLES["ru"])
-    level_sample = level_sample_dict.get(level_key, level_sample_dict["hard"])
-    system_prompt_template = KORNESLOV_SYSTEM_PROMPT.get(lang, KORNESLOV_SYSTEM_PROMPT["ru"])
-    return system_prompt_template.format(
-        book=book,
-        chapter=chapter,
-        verse=verse,
-        level=level_str,
-        level_sample=level_sample
-    )
 
 
 def build_korneslov_prompt(book, chapter, verses_str, level_key, lang="ru"):
@@ -176,39 +133,6 @@ def build_korneslov_prompt(book, chapter, verses_str, level_key, lang="ru"):
         level=level_str,
         level_sample=level_sample
     )
-
-
-
-## 2DEL
-async def fetch_full_korneslov_response_OLD(book, chapter, verse, uid, level="hard", max_loops=5):
-    """
-    Receives full response by Korneslov method and making follow-up requests if need.
-    """
-    state = get_user_state(uid)
-    lang = state.get("lang", "ru")
-
-    async def gen_func(book, chapter, verse, system_prompt, followup=None):
-        return await ask_openai(uid, book, chapter, verse, system_prompt=system_prompt, followup=followup)
-
-    ## Now try to add level handle mech.
-    system_prompt = build_korneslov_prompt(book, chapter, verse, level, lang=lang)
-
-    answer = await gen_func(book, chapter, verse, system_prompt=system_prompt, followup=None)
-
-    ## Permit false repeates - no need followup if "Chastj 3" is present already and rest checks
-    if not is_truncated(answer):
-        return answer  ## If present - return immidiatelly w/o any followups
-
-    all_answers = [answer]
-    loops = 0
-    while is_truncated(answer) and loops < max_loops:
-        followup_prompt_template = FOLLOWUP_PROMPT.get(lang, FOLLOWUP_PROMPT["ru"])
-        followup_prompt = followup_prompt_template.format(book=book, chapter=chapter, verse=verse)
-        answer = await gen_func(book, chapter, verse, system_prompt=system_prompt, followup=followup_prompt)
-        all_answers.append(answer)
-        loops += 1
-    return "\n\n".join(all_answers)
-
 
 
 async def fetch_full_korneslov_response(book, chapter, verses_str, uid, level="hard", max_loops=5):
@@ -237,7 +161,6 @@ async def fetch_full_korneslov_response(book, chapter, verses_str, uid, level="h
         all_answers.append(answer)
         loops += 1
     return "\n\n".join(all_answers)
-
 
 
 ## Real OpenAI request func
