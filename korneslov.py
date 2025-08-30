@@ -8,6 +8,8 @@ from texts.dummy_texts import *
 from texts.books_names import *
 from i18n.messages import tr
 from utils.userstate import get_user_state
+from db import get_conn
+from db.books import find_book_entry
 
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
@@ -54,17 +56,7 @@ def _parse_verses(verses_str):
                 continue
     return sorted(verses)
 
-
-def _book_regex(lang="ru"):
-    """Generates regexp for book search on current lang."""
-    books = BOOKS_RU if lang == "ru" else BOOKS_EN
-    books_re = "|".join([re.escape(b) for b in books])
-    return fr"({books_re})"
-
-
 ####### /Move to utils ###############
-
-
 
 
 ## DUMMY then `DUMMY_TEXT = True`
@@ -85,36 +77,59 @@ def is_valid_korneslov_query(message):
     return bool(refs)
 
 
+def _parse_verses(verses_str):
+    """
+    Parse strings like '1-3,5,7-9' to list of verses numbers: [1,2,3,5,7,8,9]
+    """
+    verses = []
+    for part in verses_str.split(','):
+        part = part.strip()
+        if '-' in part:
+            try:
+                start, end = map(int, part.split('-'))
+                if start > end:
+                    continue
+                verses += list(range(start, end + 1))
+            except Exception:
+                continue
+        elif part:
+            try:
+                verses.append(int(part))
+            except Exception:
+                continue
+    return verses
+
+
+async def _book_exists(book):
+    async with await get_conn() as conn:
+        result = await find_book_entry(book, conn)
+    return result is not None
+
+
 def parse_references(text, lang="ru"):
     """
-    Parese the string like "genesis 2 3:7,9", "exodus 3:5" or their rus equivalents.
+    Parse the string like "genesis 2 3:7,9", "exodus 3:5" or their rus equivalents.
     Returns the list of dicts: [{"book": str, "chapter": int, "verses": [int, ...]}, ...]
-    If cannot to parse - returns emty list.
+    If cannot parse - returns empty list.
+    Support for book names with numbers and spaces.
     """
     text = text.strip()
-    ## Define book's lang via presense in the books lists (if the both - give lang)
-    lang_guessed = lang
-    ## Unified pattern: book + chapter + verses(single/range/list), delimiter between chapter and verse is space or `:`
-    ## Example: "genesis 1 1", "genesis 1:1", "genesis 1 1-3,4,7-9", "genesis 2 7-9" or their rus equivs.
-    ## Group 1 - book, 2 - chapter, 3 - verse(-s)
-    books_re = _book_regex(lang_guessed)
-    pattern = re.compile(
-        rf"^{books_re}\s+(\d+)\s*[:\s]\s*([\d\-,\s]+)$",
-        re.IGNORECASE
-    )
-    result = []
-    ## TODO or not TODO: May to add support of some requests in the one string.. (doubtful usefulness).
-    m = pattern.match(text)
-    if not m:
+    if not text:
         return []
-    book = m.group(1)
-    chapter = int(m.group(2))
-    verses_str = m.group(3)
+    parts = text.split()
+    if len(parts) < 3:
+        return []
+    verses_str = parts[-1]
+    chapter_str = parts[-2]
+    book = " ".join(parts[:-2])
+    try:
+        chapter = int(chapter_str)
+    except Exception:
+        return []
     verses = _parse_verses(verses_str)
     if not verses:
         return []
-    result.append({"book": book, "chapter": chapter, "verses": verses})
-    return result
+    return [{"book": book, "chapter": chapter, "verses": verses}]
 
 
 def build_korneslov_prompt(book, chapter, verses_str, level_key, lang="ru"):
@@ -148,7 +163,7 @@ async def fetch_full_korneslov_response(book, chapter, verses_str, uid, level="h
     system_prompt = build_korneslov_prompt(book, chapter, verses_str, level, lang=lang)
     answer = await gen_func(book, chapter, verses_str, system_prompt=system_prompt, followup=None)
 
-    ## Permit false repeates - no need followup if "Chastj 3" is present already and rest checks
+    ## Permit false repeates - check for marker at the end of Part 3
     if not is_truncated(answer):
         return answer  ## If present - return immidiatelly w/o any followups
 
@@ -200,7 +215,6 @@ async def ask_openai(uid, book, chapter, verse, system_prompt=None, test_banner=
         response = await client.chat.completions.create(**params)
         text = response.choices[0].message.content.strip()
         print(f"DEBUGA: {text}")
-        ##print("korneslov_py.ask_openai_return FROM tr(): ", tr("korneslov_py.ask_openai_return", default_lang=lang))
         return f"""{tr("korneslov_py.ask_openai_return", default_lang=lang)} {book} {chapter}:{verse}\n{text}{f'\n{test_banner}' if test_banner else ''}"""
 
     except Exception as e:

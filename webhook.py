@@ -4,6 +4,9 @@ from flask import Flask, request, jsonify
 from config import TRIBUTE_WEBHOOK_SECRET, TRIBUTE_PRODUCT_10_ID, QUERIES_FOR_10
 from db import add_balance
 
+## OLD implementation!! Need to rework everything!!
+
+
 app = Flask(__name__)
 
 

@@ -3,13 +3,16 @@ from utils.userstate import get_user_state
 MESSAGES = {
     "ru": {
         "start": {
-            "start_bot": """Привет! Я бот метода «Корнеслов».
+            "start_bot": """Привет! Я бот метода <b>«Корнеслов»</b>.
 Выберите доступные опции в меню ниже. Если меню не отображено, нажмите на значок квадрата с точками справа внизу.
 Для разбора текста нажмите на кнопку "Корнеслов" и выберите нужные опции в его подменю. Затем отправьте запрос в формате:
 
-<b>Корнеслов Книга Глава:Стих</b>
+<b>книга глава стих</b>
 
-Напр.: <i>Корнеслов Бытие 1:1</i>
+Напр.: 
+<i>бытие 1 1</i>
+<i>бытие 1 2,3</i>
+<i>бытие 1 4,6-8,10-12,14</i>
 
 Баланс: /balance
 Купить пакеты: /buy
@@ -40,8 +43,7 @@ MESSAGES = {
  • <b>Риши</b> - исследования текстов на санскрите: Shrimad Bhagavatam/Шримад Бхагаватам..
  • <b>Что-то еще</b> - что-нибудь еще..
 \nВ каждом направлении есть подпункты для выбора уровня сложности разбора.
-
-______________"""
+"""
         },
         "masoret_menu": {
             "light": "Поугарать",
@@ -62,11 +64,13 @@ ______________"""
 
 После выбора уровня сложности не забудьте отправить запрос. Напишите его в формате:
 
-<b>Корнеслов Книга Глава:Стих</b>
+<b>книга глава стих(и)</b>
 
-Напр.: Корнеслов Бытие 1:1
-
-______________""",
+Напр.: 
+<i>бытие 1 1</i>
+<i>бытие 1 2,3</i>
+<i>бытие 1 4,6-8,10-12,14</i>
+""",
             "level_set": "Установлен уровень"
         },
         "rishi_menu": {
@@ -99,6 +103,7 @@ ______________""",
         },
         "handle_korneslov_query": {
             "query_format_error": "Неверный формат запроса. Пример: бытие 1 1-3,5",
+            "book_not_found": "Книга «{book}» не найдена в базе. Проверьте правильность названия.",
         },
         "korneslov_py": {
             "regexp": r'^Корнеслов\s+([^\s]+)\s+(\d+):(\d+)$',
@@ -108,10 +113,10 @@ ______________""",
             "ask_openai_exception_logging": "Ошибка при обращении к OpenAI",
             "ask_openai_exception_return": "Корнеслов {book} {chapter}:{verse}\n(Ошибка обращения к ChatGPT. Попробуйте позже.)",
         },
-        "utils_py": {
-            "is_truncated_regexp": r"Часть.*?3", ## 2DEL - move to univ.marker.. Need to recheck
-        },
     },
+
+########### ENGLISH ###########
+
     "en": {
         "start": {
             "start_bot": "StartBot message",
@@ -140,8 +145,7 @@ ______________""",
  • <b>Rishi</b> — Sanskrit studies: Shrimad Bhagavatam.
  • <b>Something else</b> — something else...
 \nEach direction contains its own difficulty submenu.
-
-______________"""
+"""
         },
         "masoret_menu": {
             "light": "For fun",
@@ -162,11 +166,13 @@ Depending on your choice, you get various parts. Levels:
 
 After choosing a level, send your request like:
 
-<b>Korneslov Book Chapter:Verse</b>
+<b>book chapter verse(s)</b>
 
-Example: Korneslov Genesis 1:1
-
-______________""",
+Example: 
+<i>genesis 1 1</i>
+<i>genesis 1 2,3</i>
+<i>genesis 1 4,6-8,10-12,14</i>
+""",
             "level_set": "Level set"
         },
         "rishi_menu": {
@@ -199,6 +205,7 @@ ______________""",
         },
         "handle_korneslov_query": {
             "query_format_error": "Query format error. Example: genesis 1 1-3,5",
+            "book_not_found": "The book «{book}» not found in DB. Please check book name.",
         },
         "korneslov_py": {
             "regexp": r'^Korneslov\s+([^\s]+)\s+(\d+):(\d+)$',
@@ -207,9 +214,6 @@ ______________""",
             "ask_openai_return": "Korneslov", ## inserted into f-string
             "ask_openai_exception_logging": "OpenAI request failed",
             "ask_openai_exception_return": "Korneslov {book} {chapter}:{verse}\n(Error during request to ChatGPT. Try later.)",
-        },
-        "utils_py": {
-            "is_truncated_regexp": r"Part.*?3",
         },
     }
 }

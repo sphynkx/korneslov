@@ -3,4 +3,5 @@ Flask==3.0.3
 python-dotenv==1.0.1
 openai<1.38
 httpx[socks]<0.26
-mistune
+aiomysql
+python-dotenv

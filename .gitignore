@@ -2,12 +2,13 @@ _XLAM/
 __pycache__/
 .venv*
 .env*
-!.env-sample
+##!.env-sample
 env/
 venv/
 texts/
 ##texts/*
 ##!texts/.gitkeep
-config.py
+##config.py
 *.db
-*.sqlite3
+*.sql
+install/conf_db.sql
