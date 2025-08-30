@@ -2,7 +2,7 @@ _XLAM/
 __pycache__/
 .venv*
 .env*
-##!.env-sample
+!install/.env-sample
 env/
 venv/
 texts/
