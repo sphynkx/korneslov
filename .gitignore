@@ -11,4 +11,7 @@ texts/
 ##config.py
 *.db
 *.sql
+##install/conf_db.sql
+install/*
+!install/*.sql
 install/conf_db.sql

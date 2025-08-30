@@ -1,0 +1,59 @@
+-- Create DB
+CREATE DATABASE IF NOT EXISTS korneslov CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE korneslov;
+
+-- Store books names
+CREATE TABLE IF NOT EXISTS books (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    bookname_ru VARCHAR(64) NOT NULL,
+    bookname_en VARCHAR(64) NOT NULL,
+    category VARCHAR(64) NOT NULL,
+    synonyms_ru TEXT,
+    synonyms_en TEXT,
+    max_chapter INT NOT NULL,
+    max_verses LONGTEXT NOT NULL
+);
+
+-- Users' requests
+CREATE TABLE IF NOT EXISTS requests (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    user_state TEXT,
+    datetime_request DATETIME,
+    datetime_response DATETIME,
+    delay FLOAT,
+    request TEXT,
+    status_oai BOOLEAN,
+    status_tg BOOLEAN
+);
+
+-- Info about bot's users
+CREATE TABLE IF NOT EXISTS users (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT NOT NULL UNIQUE,
+    firstname VARCHAR(128),
+    lastname VARCHAR(128),
+    username VARCHAR(128),
+    lang VARCHAR(8) DEFAULT 'ru',
+    is_bot BOOLEAN DEFAULT FALSE,
+    blacklisted BOOLEAN DEFAULT FALSE,
+    request_id INT,
+    last_seen DATETIME,
+    FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE SET NULL
+);
+
+-- OpenAI responses
+CREATE TABLE IF NOT EXISTS responses (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    request_id INT NOT NULL,
+    data LONGTEXT,
+    FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE
+);
+
+-- For tribute (dummy for now)
+CREATE TABLE IF NOT EXISTS tribute (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id BIGINT,
+    tribute_data TEXT,
+    datetime DATETIME
+);
