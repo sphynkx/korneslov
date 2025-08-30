@@ -47,7 +47,7 @@ curl -I https://korneslov.veda.wiki/
 ## App Initial
 ```
 cd /opt
-git clone https://github.com/sphynkx/rootster korneslov
+git clone https://github.com/sphynkx/korneslov
 cd /opt/korneslov
 python3 -m venv .venv
 source .venv/bin/activate
