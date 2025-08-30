@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS users (
     lang VARCHAR(8) DEFAULT 'ru',
     is_bot BOOLEAN DEFAULT FALSE,
     blacklisted BOOLEAN DEFAULT FALSE,
+    whitelisted BOOLEAN DEFAULT FALSE,
     request_id INT,
     last_seen DATETIME,
     FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE SET NULL
@@ -57,3 +58,16 @@ CREATE TABLE IF NOT EXISTS tribute (
     tribute_data TEXT,
     datetime DATETIME
 );
+
+-- Admin users for admin panel
+CREATE TABLE IF NOT EXISTS admins (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(64) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    full_name VARCHAR(128),
+    role VARCHAR(32) DEFAULT 'admin',
+    is_active BOOLEAN DEFAULT TRUE,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    last_login DATETIME
+);
+
