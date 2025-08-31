@@ -106,12 +106,11 @@ MESSAGES = {
             "book_not_found": "Книга «{book}» не найдена в базе. Проверьте правильность названия.",
         },
         "korneslov_py": {
-            "regexp": r'^Корнеслов\s+([^\s]+)\s+(\d+):(\d+)$',
-            "dummy_openai_response_return": "Корнеслов {book} {chapter}:{verse}\n{dummy_text}",
-            "ask_openai_no_OPENAI_API_KEY": "Корнеслов {book} {chapter}:{verse}\n(Ошибка: не указан ключ OpenAI или не установлен пакет openai){test_banner}",
+            "dummy_openai_response_return": "Корнеслов: {book} {chapter} {verse}\n<br>{dummy_text}",
+            "ask_openai_no_OPENAI_API_KEY": "Корнеслов: {book} {chapter} {verse}\n(Ошибка: не указан ключ OpenAI или не установлен пакет openai){test_banner}",
             "ask_openai_return": "Корнеслов", ## inserted into f-string
             "ask_openai_exception_logging": "Ошибка при обращении к OpenAI",
-            "ask_openai_exception_return": "Корнеслов {book} {chapter}:{verse}\n(Ошибка обращения к ChatGPT. Попробуйте позже.)",
+            "ask_openai_exception_return": "Корнеслов: {book} {chapter} {verse}\n(Ошибка обращения к ChatGPT. Попробуйте позже.)",
         },
     },
 
@@ -208,12 +207,11 @@ Example:
             "book_not_found": "The book «{book}» not found in DB. Please check book name.",
         },
         "korneslov_py": {
-            "regexp": r'^Korneslov\s+([^\s]+)\s+(\d+):(\d+)$',
-            "dummy_openai_response_return": "Korneslov {book} {chapter}:{verse}\n{dummy_text}",
-            "ask_openai_no_OPENAI_API_KEY": "Korneslov {book} {chapter}:{verse}\n(Error: No OpenAI key specified or openai package not installed){test_banner}",
+            "dummy_openai_response_return": "Korneslov: {book} {chapter} {verse}\n{dummy_text}",
+            "ask_openai_no_OPENAI_API_KEY": "Korneslov: {book} {chapter} {verse}\n(Error: No OpenAI key specified or openai package not installed){test_banner}",
             "ask_openai_return": "Korneslov", ## inserted into f-string
             "ask_openai_exception_logging": "OpenAI request failed",
-            "ask_openai_exception_return": "Korneslov {book} {chapter}:{verse}\n(Error during request to ChatGPT. Try later.)",
+            "ask_openai_exception_return": "Korneslov: {book} {chapter} {verse}\n(Error during request to ChatGPT. Try later.)",
         },
     }
 }

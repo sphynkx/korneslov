@@ -5,7 +5,6 @@ from openai import AsyncOpenAI
 from utils.utils import is_truncated
 from texts.prompts import *
 from texts.dummy_texts import *
-from texts.books_names import *
 from i18n.messages import tr
 from utils.userstate import get_user_state
 from db import get_conn
@@ -13,9 +12,6 @@ from db.books import find_book_entry
 
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
-
-KORNESLOV_RE_RU = re.compile(tr("korneslov_py.regexp", default_lang="ru"), re.IGNORECASE)
-KORNESLOV_RE_EN = re.compile(tr("korneslov_py.regexp", default_lang="en"), re.IGNORECASE)
 
 
 ##DUMMY_TEXT = True
@@ -215,7 +211,7 @@ async def ask_openai(uid, book, chapter, verse, system_prompt=None, test_banner=
         response = await client.chat.completions.create(**params)
         text = response.choices[0].message.content.strip()
         print(f"DEBUGA: {text}")
-        return f"""{tr("korneslov_py.ask_openai_return", default_lang=lang)} {book} {chapter}:{verse}\n{text}{f'\n{test_banner}' if test_banner else ''}"""
+        return f"""{tr("korneslov_py.ask_openai_return", default_lang=lang)}: {book} {chapter} {verse}\n<br><br>{text}{f'\n{test_banner}' if test_banner else ''}"""
 
     except Exception as e:
         logging.exception(tr("korneslov_py.ask_openai_exception_logging"))

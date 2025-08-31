@@ -143,7 +143,7 @@ async def handle_korneslov_query(message: types.Message):
         #     return
 
     ## New parser sends the list of references (1 or more)
-    print(f"DBG main befor parse_references: text={text}, lang={lang}")
+    print(f"DBG main befor parse_references: {text=}, {lang=} {state=}")
     refs = parse_references(text, lang)
     if not refs:
         await message.answer(tr("handle_korneslov_query.query_format_error"))
