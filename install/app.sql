@@ -11,7 +11,8 @@ CREATE TABLE IF NOT EXISTS books (
     synonyms_ru TEXT,
     synonyms_en TEXT,
     max_chapter INT NOT NULL,
-    max_verses LONGTEXT NOT NULL
+    max_verses LONGTEXT NOT NULL,
+    hits INT NOT NULL DEFAULT 0
 );
 
 -- Users' requests

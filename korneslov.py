@@ -6,9 +6,10 @@ from utils.utils import is_truncated
 from texts.prompts import *
 from texts.dummy_texts import *
 from i18n.messages import tr
+from utils.utils import _normalize_book, parse_references, _parse_verses
 from utils.userstate import get_user_state
 from db import get_conn
-from db.books import find_book_entry
+from db.books import find_book_entry, increment_book_hits
 
 
 client = AsyncOpenAI(api_key=OPENAI_API_KEY)
@@ -18,41 +19,6 @@ client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 ##
 DUMMY_TEXT = False
 
-
-
-####### Move to utils ###############
-
-def _normalize_book(book):
-    """Set to lowercase, remove extra spaces."""
-    return book.strip().lower()
-
-
-def _is_known_book(book, lang="ru"):
-    checkbook = _normalize_book(book)
-    if lang == "ru":
-        return checkbook in BOOKS_RU
-    return checkbook in BOOKS_EN
-
-
-def _parse_verses(verses_str):
-    ## Reformat strings like "3", "3-5", "3,5,7-9" to verses numbers list: [3], [3,4,5], [3,5,7,8,9]
-    verses = set()
-    for part in verses_str.split(","):
-        part = part.strip()
-        if '-' in part:
-            start, end = part.split('-', 1)
-            try:
-                verses.update(range(int(start), int(end) + 1))
-            except Exception:
-                continue
-        else:
-            try:
-                verses.add(int(part))
-            except Exception:
-                continue
-    return sorted(verses)
-
-####### /Move to utils ###############
 
 
 ## DUMMY then `DUMMY_TEXT = True`
@@ -68,32 +34,10 @@ def is_valid_korneslov_query(message):
     uid = message.from_user.id
     state = get_user_state(uid)
     lang = state.get("lang", "ru")
-    ##print(f"DBG is_valid_korneslov_query: {message.text=} ; {lang=}")
+    print(f"DBG is_valid_korneslov_query: {message.text=} ; {lang=}")
     refs = parse_references(message.text, lang)
     return bool(refs)
 
-
-def _parse_verses(verses_str):
-    """
-    Parse strings like '1-3,5,7-9' to list of verses numbers: [1,2,3,5,7,8,9]
-    """
-    verses = []
-    for part in verses_str.split(','):
-        part = part.strip()
-        if '-' in part:
-            try:
-                start, end = map(int, part.split('-'))
-                if start > end:
-                    continue
-                verses += list(range(start, end + 1))
-            except Exception:
-                continue
-        elif part:
-            try:
-                verses.append(int(part))
-            except Exception:
-                continue
-    return verses
 
 
 async def _book_exists(book):
@@ -102,30 +46,7 @@ async def _book_exists(book):
     return result is not None
 
 
-def parse_references(text, lang="ru"):
-    """
-    Parse the string like "genesis 2 3:7,9", "exodus 3:5" or their rus equivalents.
-    Returns the list of dicts: [{"book": str, "chapter": int, "verses": [int, ...]}, ...]
-    If cannot parse - returns empty list.
-    Support for book names with numbers and spaces.
-    """
-    text = text.strip()
-    if not text:
-        return []
-    parts = text.split()
-    if len(parts) < 3:
-        return []
-    verses_str = parts[-1]
-    chapter_str = parts[-2]
-    book = " ".join(parts[:-2])
-    try:
-        chapter = int(chapter_str)
-    except Exception:
-        return []
-    verses = _parse_verses(verses_str)
-    if not verses:
-        return []
-    return [{"book": book, "chapter": chapter, "verses": verses}]
+
 
 
 def build_korneslov_prompt(book, chapter, verses_str, level_key, lang="ru"):

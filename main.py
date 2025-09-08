@@ -7,8 +7,8 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import TELEGRAM_BOT_TOKEN, USE_TRIBUTE, TRIBUTE_PRODUCT_10_ID, TRIBUTE_PRODUCT_10_URL, TESTMODE
-from korneslov import is_valid_korneslov_query, parse_references, fetch_full_korneslov_response
-from utils.utils import split_message
+from korneslov import is_valid_korneslov_query, fetch_full_korneslov_response
+from utils.utils import split_message, parse_references
 from texts.prompts import HELP_FORMAT
 from menu import router, main_reply_keyboard
 from utils.userstate import get_user_state
@@ -144,7 +144,7 @@ async def handle_korneslov_query(message: types.Message):
 
     ## New parser sends the list of references (1 or more)
     print(f"DBG main befor parse_references: {text=}, {lang=} {state=}")
-    refs = parse_references(text, lang)
+    refs = await parse_references(text, lang)
     if not refs:
         await message.answer(tr("handle_korneslov_query.query_format_error"))
         ## Update status as unsuccessful

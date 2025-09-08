@@ -1,30 +1,12 @@
 import re
 from i18n.messages import tr
+from db.books import find_book_by_name_or_synonym, increment_book_hits
+
+
 
 ## Dummy for Statistika button
 def get_statistics_text() -> str:
     return "STATISTIKA."
-
-
-## Split msgz for Teleram (with tiny heuristicx).
-def split_message_OLD(text, max_length=4000):
-    parts = []
-    while len(text) > max_length:
-        ## Search for closest \n or <br> before limit
-        split_pos = text.rfind('<br>', 0, max_length)
-        if split_pos == -1:
-            split_pos = text.rfind('\n', 0, max_length)
-        if split_pos == -1:
-            split_pos = text.rfind('.', 0, max_length)
-        if split_pos == -1:
-            split_pos = max_length
-        else:
-            split_pos += 4 if text[split_pos:split_pos+4] == '<br>' else 1
-        parts.append(text[:split_pos].strip())
-        text = text[split_pos:].lstrip()
-    if text:
-        parts.append(text)
-    return parts
 
 
 ## Improved heuristics - tracks allowed pair tags, count all tags using dict. In case of unclosed tag force set close tag at the end of part, and force set open tag at the beginning of the next part. No errors were observed.
@@ -93,4 +75,81 @@ def is_truncated(answer: str, min_length=3500, ending_punct=('.','…','!','?', 
     long_enough = len(answer) >= min_length
     truncated = long_enough and not answer.endswith(ending_punct)
     return truncated
+
+
+def _normalize_book(book):
+    """Set to lowercase, remove extra spaces."""
+    return book.strip().lower()
+
+
+def _parse_verses(verses_str):
+    ## Reformat strings like "3", "3-5", "3,5,7-9" to verses numbers list: [3], [3,4,5], [3,5,7,8,9]
+    verses = set()
+    for part in verses_str.split(","):
+        part = part.strip()
+        if '-' in part:
+            start, end = part.split('-', 1)
+            try:
+                verses.update(range(int(start), int(end) + 1))
+            except Exception:
+                continue
+        else:
+            try:
+                verses.add(int(part))
+            except Exception:
+                continue
+    return sorted(verses)
+
+
+async def parse_references(text, lang="ru"):
+    """
+    Parse the string like "genesis 2 3:7,9", "exodus 3:5" or their rus equivalents.
+    Returns the list of dicts: [{"book": str, "chapter": int, "verses": [int, ...]}, ...]
+    If cannot parse - returns empty list.
+    Support for book names with numbers and spaces.
+    """
+    text = text.strip()
+    if not text:
+        return []
+    parts = text.split()
+    if len(parts) < 3:
+        return []
+    verses_str = parts[-1]
+    chapter_str = parts[-2]
+    book = " ".join(parts[:-2])
+    try:
+        chapter = int(chapter_str)
+    except Exception:
+        return []
+    verses = _parse_verses(verses_str)
+    if not verses:
+        return []
+
+    ## Check book in the `books` table
+    book_entry = await find_book_by_name_or_synonym(book)
+    if not book_entry:
+        return []
+
+    ## Is chapter correct??
+    max_chapter = book_entry.get('max_chapter')
+    if not chapter or chapter < 1 or chapter > max_chapter:
+        return []
+
+    ## Is verses are correct??
+    max_verses_str = book_entry.get('max_verses')
+    try:
+        max_verses = eval(max_verses_str)
+    except Exception:
+        return []
+    if chapter > len(max_verses):
+        return []
+    max_verse = max_verses[chapter - 1]
+    bad_verses = [v for v in verses if v < 1 or v > max_verse]
+    if bad_verses:
+        return []
+
+    ## Everything is OK then lets increment the `books.hits`!!
+    await increment_book_hits(book_entry['id'])
+
+    return [{"book": book, "chapter": chapter, "verses": verses}]
 
