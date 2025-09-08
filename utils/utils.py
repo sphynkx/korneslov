@@ -101,12 +101,16 @@ def _parse_verses(verses_str):
     return sorted(verses)
 
 
-async def parse_references(text, lang="ru"):
+async def parse_references(text, lang="ru", hits=False):
     """
     Parse the string like "genesis 2 3:7,9", "exodus 3:5" or their rus equivalents.
     Returns the list of dicts: [{"book": str, "chapter": int, "verses": [int, ...]}, ...]
     If cannot parse - returns empty list.
     Support for book names with numbers and spaces.
+    Note: parse_references() calls in 2 places:
+    * at as filter in `main.py` (handle_korneslov_query() ) hit is False - do not increment
+    * at is_valid_korneslov_query() with `hits=True` param, and increments the `hits`
+    It was bugfix for duplicated incrementions.
     """
     text = text.strip()
     if not text:
@@ -149,7 +153,8 @@ async def parse_references(text, lang="ru"):
         return []
 
     ## Everything is OK then lets increment the `books.hits`!!
-    await increment_book_hits(book_entry['id'])
+    if hits:
+        await increment_book_hits(book_entry['id'])
 
     return [{"book": book, "chapter": chapter, "verses": verses}]
 

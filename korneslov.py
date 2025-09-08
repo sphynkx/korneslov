@@ -29,7 +29,7 @@ def dummy_openai_response(book, chapter, verse, test_banner="", followup=None, d
     return tr("korneslov_py.dummy_openai_response_return", book=book, chapter=chapter, verse=verse, dummy_text=dummy_text)
 
 
-def is_valid_korneslov_query(message):
+def is_valid_korneslov_query_SYNC(message):
     """Check whether to parse string as request to Korneslov."""
     uid = message.from_user.id
     state = get_user_state(uid)
@@ -38,6 +38,14 @@ def is_valid_korneslov_query(message):
     refs = parse_references(message.text, lang)
     return bool(refs)
 
+
+async def is_valid_korneslov_query(message):
+    """Check whether to parse string as request to Korneslov."""
+    uid = message.from_user.id
+    state = get_user_state(uid)
+    lang = state.get("lang", "ru")
+    refs = await parse_references(message.text, lang, True)
+    return bool(refs)
 
 
 async def _book_exists(book):

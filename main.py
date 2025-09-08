@@ -95,7 +95,8 @@ async def cmd_buy(message: types.Message):
 
 
 ## Handle valid requests only.
-@dp.message(lambda message: is_valid_korneslov_query(message))
+##@dp.message(lambda message: is_valid_korneslov_query(message)) ## SYNC filter
+@dp.message(is_valid_korneslov_query)
 async def handle_korneslov_query(message: types.Message):
     text = message.text or ""
     uid = message.from_user.id
