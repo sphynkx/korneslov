@@ -99,7 +99,13 @@ async def cmd_buy(message: types.Message):
 
 ## Handle valid requests only.
 @dp.message(is_valid_korneslov_query)
-async def handle_korneslov_query(message: types.Message):
+####async def handle_korneslov_query(message: types.Message):
+async def handle_korneslov_query(message: types.Message, refs=None, error=None):
+    print(f"REFS: {refs=}")
+    if error == "format":
+        await message.answer(tr("handle_korneslov_query.query_format_error", caller="main.py: request format error"))
+        return
+
     text = message.text or ""
     uid = message.from_user.id
     state = get_user_state(uid)
@@ -135,17 +141,6 @@ async def handle_korneslov_query(message: types.Message):
         user_state=state,
         request=text
     )
-
-    print(f"DBG main befor parse_references: {text=}, {lang=} {state=}")
-    refs = await parse_references(text, lang)
-    if not refs:
-##        await message.answer(tr("handle_korneslov_query.query_format_error"))
-## DBG replacement
-## TODO: make all tr() requests same!! Also - DBF befor and afta
-        await message.answer(tr("handle_korneslov_query.query_format_error", caller="main.py: request format error"))
-        ## Refresh status as unsuccessful
-        await update_request_response(req_id, status_oai=False, status_tg=False)
-        return
 
     ref = refs[0]
     book = ref["book"]

@@ -24,7 +24,7 @@ MESSAGES = {
             "welcome": "Добро пожаловать! Выберите действие:",
             "test1": "бытие 1 1",
             "test2": "бытие 3 1",
-            "test3": "иоанна 11 35",
+            "test3": "тест 1 2",
             "language": "Language",
             "korneslov": "Корнеслов",
             "payment": "Оплата",
@@ -125,7 +125,7 @@ MESSAGES = {
             "welcome": "Welcome! Choose an action:",
             "test1": "genesis 1 1",
             "test2": "genesis 3 1",
-            "test3": "john 11 35",
+            "test3": "test 1 2",
             "language": "Язык",
             "korneslov": "Korneslov",
             "payment": "Payment",
@@ -220,7 +220,7 @@ Example:
 ##def tr(key, msg=None, user_id=None, default_lang="ru", **kwargs):
 def tr(key, caller=None, msg=None, user_id=None, default_lang="ru", **kwargs):
     ## Define user_id from msg (if sent), of from param, else fallback
-    print(f"DBG: tr() called with key={key}, caller={caller}, kwargs={kwargs}")
+    ##print(f"DBG: tr() called with key={key}, caller={caller}, kwargs={kwargs}")
     if msg is not None:
         user_id = msg.from_user.id
     lang = default_lang

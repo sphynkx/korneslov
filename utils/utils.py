@@ -1,5 +1,4 @@
 import re
-## deprecated from i18n.messages import tr
 from db.books import find_book_by_name_or_synonym, increment_book_hits
 
 
@@ -112,6 +111,7 @@ async def parse_references(text, lang="ru", hits=False):
     * at is_valid_korneslov_query() with `hits=True` param, and increments the `hits`
     It was bugfix for duplicated incrementions.
     """
+    print(f"     DBG: parse_references()!! {text=}")
     text = text.strip()
     if not text:
         return []

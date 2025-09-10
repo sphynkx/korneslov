@@ -29,32 +29,20 @@ def dummy_openai_response(book, chapter, verse, test_banner="", followup=None, d
     return tr("korneslov_py.dummy_openai_response_return", book=book, chapter=chapter, verse=verse, dummy_text=dummy_text)
 
 
-def is_valid_korneslov_query_SYNC(message):
-    """Check whether to parse string as request to Korneslov."""
-    uid = message.from_user.id
-    state = get_user_state(uid)
-    lang = state.get("lang", "ru")
-    print(f"DBG is_valid_korneslov_query: {message.text=} ; {lang=}")
-    refs = parse_references(message.text, lang)
-    return bool(refs)
-
-
 async def is_valid_korneslov_query(message):
-    """Check whether to parse string as request to Korneslov."""
     uid = message.from_user.id
     state = get_user_state(uid)
     lang = state.get("lang", "ru")
     refs = await parse_references(message.text, lang, True)
-    return bool(refs)
+    if not refs:
+        return {"error": "format"}
+    return {"refs": refs}
 
 
 async def _book_exists(book):
     async with await get_conn() as conn:
         result = await find_book_entry(book, conn)
     return result is not None
-
-
-
 
 
 def build_korneslov_prompt(book, chapter, verses_str, level_key, lang="ru"):
@@ -90,7 +78,7 @@ async def fetch_full_korneslov_response(book, chapter, verses_str, uid, level="h
 
     ## Permit false repeates - check for marker at the end of Part 3
     if not is_truncated(answer):
-        return answer  ## If present - return immidiatelly w/o any followups
+        return answer  ## If present - return immediately w/o any followups
 
     all_answers = [answer]
     loops = 0
