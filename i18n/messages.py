@@ -92,7 +92,7 @@ MESSAGES = {
         "tribute": {
             "pay_keyboard_for": "Купить 10 запросов",
             "testmode": "Тестовый режим: баланс не ограничен.",
-            "use_tribute": "Ваш баланс: <b>{bal}</b> запрос(ов).",
+            "use_tribute": "Ваш баланс: <b>{requests_left}</b> запрос(ов).",
             "no_use_tribute": "Тестовый режим: баланс не ограничен.",
             "cmd_buy_testmode": "Тестовый режим: оплата отключена.",
             "cmd_buy_use_tribute": "Выберите пакет. Оплата через Tribute.",
@@ -193,12 +193,12 @@ Example:
         "tribute": {
             "pay_keyboard_for": "Buy 10 requests",
             "testmode": "Test mode: unlimited balance.",
-            "use_tribute": "Your balance: <b>{bal}</b> request(s).",
+            "use_tribute": "Your balance: <b>{requests_left}</b> request(s).",
             "no_use_tribute": "Test mode: unlimited balance.",
             "cmd_buy_testmode": "Test mode: payment disabled.",
             "cmd_buy_use_tribute": "Choose package. Payment via Tribute.",
             "cmd_buy_no_use_tribute": "Test mode: unlimited balance.",
-            "handle_korneslov_query_no_testmode_use_tribute": "❌ Ypu have not available requests.\nPlease recharge your balance:", ## used twice
+            "handle_korneslov_query_no_testmode_use_tribute": "❌ You have not available requests.\nPlease recharge your balance:", ## used twice
             "handle_korneslov_query_testmode_no_use_tribute": "\n\n(Test mode)",
             "handle_korneslov_query_exception": "A generation error occurred. Please try again later.",
         },
@@ -217,8 +217,10 @@ Example:
 }
 
 
-def tr(key, msg=None, user_id=None, default_lang="ru", **kwargs):
+##def tr(key, msg=None, user_id=None, default_lang="ru", **kwargs):
+def tr(key, caller=None, msg=None, user_id=None, default_lang="ru", **kwargs):
     ## Define user_id from msg (if sent), of from param, else fallback
+    print(f"DBG: tr() called with key={key}, caller={caller}, kwargs={kwargs}")
     if msg is not None:
         user_id = msg.from_user.id
     lang = default_lang

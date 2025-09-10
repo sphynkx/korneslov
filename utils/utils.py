@@ -1,5 +1,5 @@
 import re
-from i18n.messages import tr
+## deprecated from i18n.messages import tr
 from db.books import find_book_by_name_or_synonym, increment_book_hits
 
 

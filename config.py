@@ -21,9 +21,11 @@ USE_TRIBUTE = os.getenv("USE_TRIBUTE", "False").lower() == "true"
 
 ## Tribute support
 TRIBUTE_WEBHOOK_SECRET = os.getenv("TRIBUTE_WEBHOOK_SECRET", "")
-TRIBUTE_PRODUCT_10_ID = os.getenv("TRIBUTE_PRODUCT_10_ID", "prod_10_requests")
-TRIBUTE_PRODUCT_10_URL = os.getenv("TRIBUTE_PRODUCT_10_URL", "")
-QUERIES_FOR_10 = int(os.getenv("QUERIES_FOR_10", "10"))
+##TRIBUTE_PRODUCT_10_ID = os.getenv("TRIBUTE_PRODUCT_10_ID", "prod_10_requests")
+##TRIBUTE_PRODUCT_10_URL = os.getenv("TRIBUTE_PRODUCT_10_URL", "")
+##QUERIES_FOR_10 = int(os.getenv("QUERIES_FOR_10", "10"))
+TRIBUTE_REQUEST_PRICE=int(os.getenv("TRIBUTE_REQUEST_PRICE", "10"))
+TRIBUTE_PAYMENT_URL=os.getenv("TRIBUTE_PAYMENT_URL", "https://tribute.tg/pay/PAYMENT_ID")
 
 ## OpenAI params
 OPENAI_MODEL = "gpt-5"
