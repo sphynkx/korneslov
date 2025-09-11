@@ -88,7 +88,7 @@ async def cmd_balance(message: types.Message):
 async def cmd_buy(message: types.Message):
     state = get_user_state(message.from_user.id)
     if TESTMODE:
-        await message.answer(tr("tribute.cmd_buy_testmode, lang=state['lang']"), parse_mode="HTML")
+        await message.answer(tr("tribute.cmd_buy_testmode", lang=state['lang']), parse_mode="HTML")
     elif USE_TRIBUTE:
         kb = pay_keyboard_for(message.from_user.id)
         await message.answer(
