@@ -3,6 +3,7 @@ import logging
 import re
 import json
 from itertools import groupby
+from menu import router, main_reply_keyboard
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
@@ -10,7 +11,6 @@ from config import TELEGRAM_BOT_TOKEN, TRIBUTE_REQUEST_PRICE, TRIBUTE_PAYMENT_UR
 from korneslov import is_valid_korneslov_query, fetch_full_korneslov_response
 from utils.utils import split_message, parse_references
 from texts.prompts import HELP_FORMAT
-from menu import router, main_reply_keyboard
 from utils.userstate import get_user_state
 from i18n.messages import tr
 from db import get_conn
@@ -29,12 +29,12 @@ dp = Dispatcher()
 dp.include_router(router)
 
 
-
 def pay_keyboard_for(uid: int) -> InlineKeyboardMarkup:
+    state = get_user_state(uid)
     url = f"{TRIBUTE_PAYMENT_URL}?uid={uid}"   ## Send user_id to to payment service!!
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
-            [InlineKeyboardButton(text=tr("tribute.pay_keyboard_for"), url=url)]
+            [InlineKeyboardButton(text=tr("tribute.pay_keyboard_for", lang=state['lang']), url=url)]
         ]
     )
     return kb
@@ -60,52 +60,49 @@ async def cmd_start(message: types.Message):
         is_bot=user.is_bot
     )
 
-    msg_text = tr("start.start_bot")
+    msg_text = tr("start.start_bot", lang=state['lang'])
     ## UI DBG
     msg_text += f"\n\n______________\nCurrent user_id: <code>{message.from_user.id}</code>\n<b>Current state:</b>\n<code>{json.dumps(state, ensure_ascii=False)}</code>"
     if TESTMODE:
-        msg_text += tr("start.testmode_banner")
+        msg_text += tr("start.testmode_banner", lang=state['lang'])
     await message.answer(msg_text, reply_markup=main_reply_keyboard(), parse_mode="HTML")
 
 
 @dp.message(Command("balance"))
 async def cmd_balance(message: types.Message):
+    state = get_user_state(message.from_user.id)
     if TESTMODE:
-        await message.answer(tr("tribute.testmode"), parse_mode="HTML")
+        await message.answer(tr("tribute.testmode", lang=state['lang']), parse_mode="HTML")
     elif USE_TRIBUTE:
         ## Get balance via Tribute
         requests_left = await get_user_requests_left(message.from_user.id)
         await message.answer(
-            tr("tribute.use_tribute", requests_left=requests_left),
+            tr("tribute.use_tribute", lang=state['lang'], requests_left=requests_left),
             parse_mode="HTML"
         )
     else:
-        await message.answer(tr("tribute.no_use_tribute"), parse_mode="HTML")
+        await message.answer(tr("tribute.no_use_tribute", lang=state['lang']), parse_mode="HTML")
 
 
 @dp.message(Command("buy"))
 async def cmd_buy(message: types.Message):
+    state = get_user_state(message.from_user.id)
     if TESTMODE:
-        await message.answer(tr("tribute.cmd_buy_testmode"), parse_mode="HTML")
+        await message.answer(tr("tribute.cmd_buy_testmode, lang=state['lang']"), parse_mode="HTML")
     elif USE_TRIBUTE:
         kb = pay_keyboard_for(message.from_user.id)
         await message.answer(
-            tr("tribute.cmd_buy_use_tribute"),
+            tr("tribute.cmd_buy_use_tribute", lang=state['lang']),
             reply_markup=kb, parse_mode="HTML"
         )
     else:
-        await message.answer(tr("tribute.cmd_buy_no_use_tribute"), parse_mode="HTML")
+        await message.answer(tr("tribute.cmd_buy_no_use_tribute", lang=state['lang']), parse_mode="HTML")
 
 
 ## Handle valid requests only.
 @dp.message(is_valid_korneslov_query)
 ####async def handle_korneslov_query(message: types.Message):
-async def handle_korneslov_query(message: types.Message, refs=None, error=None):
-    print(f"REFS: {refs=}")
-    if error == "format":
-        await message.answer(tr("handle_korneslov_query.query_format_error", caller="main.py: request format error"))
-        return
-
+async def handle_korneslov_query(message: types.Message, refs=None):
     text = message.text or ""
     uid = message.from_user.id
     state = get_user_state(uid)
@@ -119,7 +116,7 @@ async def handle_korneslov_query(message: types.Message, refs=None, error=None):
         if not can_use(requests_left):
             kb = pay_keyboard_for(uid)
             await message.answer(
-                tr("tribute.handle_korneslov_query_no_testmode_use_tribute"),
+                tr("tribute.handle_korneslov_query_no_testmode_use_tribute", lang=state['lang']),
                 reply_markup=kb, parse_mode="HTML"
             )
             return
@@ -151,7 +148,7 @@ async def handle_korneslov_query(message: types.Message, refs=None, error=None):
     async with await get_conn() as conn:
         row = await find_book_entry(book, conn)
     if not row:
-        await message.answer(tr("handle_korneslov_query.book_not_found", book=book))
+        await message.answer(tr("handle_korneslov_query.book_not_found", book=book, lang=state['lang']))
         ## Refresh status as unsuccessful
         await update_request_response(req_id, status_oai=False, status_tg=False)
         return
@@ -178,7 +175,7 @@ async def handle_korneslov_query(message: types.Message, refs=None, error=None):
             book, chapter, verses_str, uid, level=level
         )
         if TESTMODE or not USE_TRIBUTE:
-            answer += tr("tribute.handle_korneslov_query_testmode_no_use_tribute")
+            answer += tr("tribute.handle_korneslov_query_testmode_no_use_tribute", lang=state['lang'])
         for part in split_message(answer):
             part = re.sub(r'<br.*?>', '', part)
             await message.answer(part, parse_mode="HTML")
@@ -198,7 +195,7 @@ async def handle_korneslov_query(message: types.Message, refs=None, error=None):
         logging.exception(e)
         ## Refresh status as error
         await update_request_response(req_id, status_oai=False, status_tg=False)
-        await message.answer(tr("tribute.handle_korneslov_query_exception"), parse_mode="HTML")
+        await message.answer(tr("tribute.handle_korneslov_query_exception", lang=state['lang']), parse_mode="HTML")
 
 
 async def main():

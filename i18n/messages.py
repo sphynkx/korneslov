@@ -31,7 +31,8 @@ MESSAGES = {
             "stats": "Статистика",
             "help": "Справка",
             "title": "Главное меню",
-            "help_text": "Это справка по использованию бота. Здесь вы найдете информацию о функциях и возможностях."
+            "help_text": "Это справка по использованию бота. Здесь вы найдете информацию о функциях и возможностях.",
+            "unknown_command": "ERRORA!!"
         },
         "korneslov_menu": {
             "masoret": "Масорет",
@@ -218,17 +219,16 @@ Example:
 
 
 ##def tr(key, msg=None, user_id=None, default_lang="ru", **kwargs):
-def tr(key, caller=None, msg=None, user_id=None, default_lang="ru", **kwargs):
+def tr(key, caller=None, msg=None, user_id=None, lang="ru", **kwargs):
     ## Define user_id from msg (if sent), of from param, else fallback
     ##print(f"DBG: tr() called with key={key}, caller={caller}, kwargs={kwargs}")
     if msg is not None:
         user_id = msg.from_user.id
-    lang = default_lang
     if user_id is not None:
-        lang = get_user_state(user_id).get("lang", default_lang)
+        lang = get_user_state(user_id).get("lang", lang)
     ## Get message
     parts = key.split(".")
-    d = MESSAGES.get(lang, MESSAGES.get(default_lang))
+    d = MESSAGES.get(lang, MESSAGES.get(lang))
     for part in parts:
         d = d.get(part, {})
     if isinstance(d, str):

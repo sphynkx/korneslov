@@ -30,13 +30,15 @@ def dummy_openai_response(book, chapter, verse, test_banner="", followup=None, d
 
 
 async def is_valid_korneslov_query(message):
-    uid = message.from_user.id
-    state = get_user_state(uid)
-    lang = state.get("lang", "ru")
-    refs = await parse_references(message.text, lang, True)
-    if not refs:
-        return {"error": "format"}
-    return {"refs": refs}
+    if not message.text:
+        return False
+    if message.text.startswith("/"):
+        return False
+    refs = await parse_references(message.text, ...)
+    if refs:
+####        return {"is_reqcmd": True, "refs": refs}
+        return {"refs": refs}
+    return False
 
 
 async def _book_exists(book):
@@ -100,7 +102,7 @@ async def ask_openai(uid, book, chapter, verse, system_prompt=None, test_banner=
         return dummy_openai_response(book, chapter, verse, test_banner, followup, dummy_text[lang])
 
     if not OPENAI_API_KEY:
-        return tr("korneslov_py.ask_openai_no_OPENAI_API_KEY", book=book, chapter=chapter, verse=verse, test_banner=test_banner)
+        return tr("korneslov_py.ask_openai_no_OPENAI_API_KEY", book=book, chapter=chapter, verse=verse, test_banner=test_banner, lang=lang)
 
     ## Now with levels..
     if not system_prompt:
@@ -128,12 +130,12 @@ async def ask_openai(uid, book, chapter, verse, system_prompt=None, test_banner=
         response = await client.chat.completions.create(**params)
         text = response.choices[0].message.content.strip()
         print(f"DEBUGA: {text}")
-        return f"""{tr("korneslov_py.ask_openai_return", default_lang=lang)}: {book} {chapter} {verse}\n<br><br>{text}{f'\n{test_banner}' if test_banner else ''}"""
+        return f"""{tr("korneslov_py.ask_openai_return", lang=lang)}: {book} {chapter} {verse}\n<br><br>{text}{f'\n{test_banner}' if test_banner else ''}"""
 
     except Exception as e:
-        logging.exception(tr("korneslov_py.ask_openai_exception_logging"))
+        logging.exception(tr("korneslov_py.ask_openai_exception_logging", lang=lang))
         return (
-            tr("korneslov_py.ask_openai_exception_return", book=book, chapter=chapter, verse=verse, default_lang=lang) + 
+            tr("korneslov_py.ask_openai_exception_return", book=book, chapter=chapter, verse=verse, lang=lang) + 
             (f"\n{test_banner}" if test_banner else "")
         )
 
