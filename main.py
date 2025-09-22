@@ -31,7 +31,7 @@ dp.include_router(router)
 
 def pay_keyboard_for(uid: int) -> InlineKeyboardMarkup:
     state = get_user_state(uid)
-    url = f"{TRIBUTE_PAYMENT_URL}?uid={uid}"   ## Send user_id to to payment service!!
+    url = f"{TRIBUTE_PAYMENT_URL}&uid={uid}"   ## Send user_id to to payment service!!
     kb = InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text=tr("tribute.pay_keyboard_for", lang=state['lang']), url=url)]

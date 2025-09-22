@@ -55,6 +55,27 @@ async def fetchall(query, params=None):
             await cur.execute(query, params)
             return await cur.fetchall()
 
+########################
+### Tribute part (sync)
+
+import pymysql
+from pymysql.cursors import DictCursor, Cursor
+from config import DB_HOST, DB_PORT, DB_USER, DB_PASS, DB_NAME
+
+def get_connection(dict_cursor: bool = False) -> pymysql.connections.Connection:
+    cursor_class = DictCursor if dict_cursor else Cursor
+    conn = pymysql.connect(
+        host=DB_HOST,
+        port=int(DB_PORT),
+        user=DB_USER,
+        password=DB_PASS,
+        database=DB_NAME,
+        charset="utf8mb4",
+        autocommit=False,
+        cursorclass=cursor_class,
+    )
+    return conn
+
 
 
 """
