@@ -18,7 +18,7 @@ from db.books import find_book_entry
 from db.users import upsert_user, get_user
 from db.requests import add_request, update_request_response
 from db.responses import add_response
-from db.tribute import get_user_requests_left, set_user_requests_left
+from db.tribute import get_user_amount, set_user_amount
 from utils.tribute import can_use, is_unlimited
 
 
@@ -75,7 +75,7 @@ async def cmd_balance(message: types.Message):
         await message.answer(tr("tribute.testmode", lang=state['lang']), parse_mode="HTML")
     elif USE_TRIBUTE:
         ## Get balance via Tribute
-        requests_left = await get_user_requests_left(message.from_user.id)
+        requests_left = await get_user_amount(message.from_user.id)
         await message.answer(
             tr("tribute.use_tribute", lang=state['lang'], requests_left=requests_left),
             parse_mode="HTML"
@@ -111,7 +111,7 @@ async def handle_korneslov_query(message: types.Message, refs=None):
 
     ## check balance via Tribute
     if USE_TRIBUTE and not TESTMODE:
-        requests_left = await get_user_requests_left(uid)
+        requests_left = await get_user_amount(uid)
         print(f"DBG: User balance {uid} — {requests_left}")
         if not can_use(requests_left):
             kb = pay_keyboard_for(uid)
@@ -187,7 +187,7 @@ async def handle_korneslov_query(message: types.Message, refs=None):
 
         ## Write off request from balance (if not unlim and only if successful!!)
         if USE_TRIBUTE and not TESTMODE:
-            requests_left = await get_user_requests_left(uid)
+            requests_left = await get_user_amount(uid)
             if not is_unlimited(requests_left) and requests_left >= TRIBUTE_REQUEST_PRICE:
                 await set_user_requests_left(uid, requests_left - TRIBUTE_REQUEST_PRICE)
                 print(f"DBG: New user balance for user {uid} — {requests_left - TRIBUTE_REQUEST_PRICE}")

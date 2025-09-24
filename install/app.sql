@@ -41,8 +41,8 @@ CREATE TABLE IF NOT EXISTS users (
     whitelisted BOOLEAN DEFAULT FALSE,
     request_id INT,
     last_seen DATETIME,
-    requests_left INT DEFAULT 0,
-    requests_left_update DATETIME,
+    amount INT DEFAULT 0,
+    external_id VARCHAR(64),
     FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE SET NULL
 );
 

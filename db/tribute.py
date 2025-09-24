@@ -1,95 +1,85 @@
-from decimal import Decimal
-from typing import List, Dict, Optional, Any
-from pymysql.cursors import DictCursor
-from db import get_connection
+from config import TRIBUTE_REQUEST_PRICE
+from datetime import datetime
+import aiomysql
+from db import get_pool
 
 
-def add_tribute_payment(
+async def add_tribute_payment(
     user_id: int,
     product_id: str,
-    amount: Decimal | float | int | str,
+    amount,
     currency: str,
     status: str,
     external_id: str,
-    datetime_val: Optional[str],
-    raw_json: Optional[str] = None,
-) -> None:
-    """
-    Inserts/update payload info.
-    Waits for uniq index by external_id (UNIQUE KEY (external_id)).
-    datetime_val must be string like 'YYYY-MM-DD HH:MM:SS' or None.
-    """
-    sql = """
-        INSERT INTO tribute (user_id, product_id, amount, currency, status, external_id, datetime, raw_json)
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
-        ON DUPLICATE KEY UPDATE status=VALUES(status), raw_json=VALUES(raw_json)
-    """
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                sql,
-                (
-                    user_id,
-                    product_id,
-                    amount,
-                    currency,
-                    status,
-                    external_id,
-                    datetime_val,
-                    raw_json,
-                ),
+    datetime_val: str,
+    raw_json: str,
+):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                INSERT INTO tribute (user_id, product_id, amount, currency, status, external_id, datetime, raw_json)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+                ON DUPLICATE KEY UPDATE
+                    status=VALUES(status),
+                    amount=VALUES(amount),
+                    datetime=VALUES(datetime),
+                    raw_json=VALUES(raw_json)
+                """,
+                (user_id, product_id, amount, currency, status, external_id, datetime_val, raw_json),
             )
-        conn.commit()
+            await conn.commit()
+
+async def get_user_amount_and_external_id(user_id: int):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                "SELECT amount, external_id FROM users WHERE user_id=%s",
+                (user_id,),
+            )
+            row = await cur.fetchone()
+            if not row:
+                return 0, None
+            return row[0], row[1]
+
+async def atomic_update_user_amount_and_external_id(user_id: int, delta: int, new_external_id: str) -> bool:
+    """
+    Atomically add delta to user's amount and set external_id to new_external_id ONLY if external_id != new_external_id.
+    Returns True if updated, False if not (i.e., already processed).
+    """
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                """
+                UPDATE users
+                SET amount = amount + %s, external_id = %s
+                WHERE user_id = %s AND (external_id IS NULL OR external_id <> %s)
+                """,
+                (delta, new_external_id, user_id, new_external_id),
+            )
+            await conn.commit()
+            return cur.rowcount > 0
 
 
-def get_tribute_by_user(user_id: int, limit: int = 10) -> List[Dict[str, Any]]:
-    """
-    Returns last user's payloads as  dict list
-    """
-    sql = """
-        SELECT id, user_id, product_id, amount, currency, status, external_id, datetime, raw_json
-        FROM tribute
-        WHERE user_id = %s
-        ORDER BY datetime DESC, id DESC
-        LIMIT %s
-    """
-    with get_connection(dict_cursor=True) as conn:
-        with conn.cursor(DictCursor) as cur:
-            cur.execute(sql, (user_id, int(limit)))
-            rows = cur.fetchall()
-    return list(rows or [])
-
-
-def get_user_requests_left(user_id: int) -> int:
-    """
-    Returns current balance of user's requests (integer).
-    For no records returns 0.
-    """
-    sql = "SELECT requests_left FROM users WHERE user_id = %s"
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql, (user_id,))
-            row = cur.fetchone()
+async def get_user_amount(user_id: int):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute("SELECT amount FROM users WHERE user_id=%s", (user_id,))
+            row = await cur.fetchone()
             if not row:
                 return 0
-            value = row[0]
-            try:
-                return int(value)
-            except (TypeError, ValueError):
-                return 0
+            return row[0]
 
 
-def set_user_requests_left(user_id: int, new_requests_left: int) -> None:
-    """
-    Updates the balance of user's requests.
-    """
-    sql = """
-        UPDATE users
-        SET requests_left = %s,
-            requests_left_update = NOW()
-        WHERE user_id = %s
-    """
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(sql, (int(new_requests_left), user_id))
-        conn.commit()
+async def set_user_amount(user_id: int, amount: int):
+    pool = await get_pool()
+    async with pool.acquire() as conn:
+        async with conn.cursor() as cur:
+            await cur.execute(
+                "UPDATE users SET amount = %s WHERE user_id = %s", (amount, user_id)
+            )
+            await conn.commit()
