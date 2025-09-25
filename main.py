@@ -3,11 +3,13 @@ import logging
 import re
 import json
 from itertools import groupby
+from datetime import datetime
 from menu import router, main_reply_keyboard
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
-from config import TELEGRAM_BOT_TOKEN, TRIBUTE_REQUEST_PRICE, TRIBUTE_PAYMENT_URL, USE_TRIBUTE, TESTMODE
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, LabeledPrice
+from config import TELEGRAM_BOT_TOKEN, TRIBUTE_REQUEST_PRICE, TRIBUTE_PAYMENT_URL, USE_TRIBUTE, TESTMODE, TGPAYMENT_PROVIDER_TOKEN, TGPAYMENT_PROVIDER_CURRENCY, TGPAYMENT_AMOUNT, TGPAYMENT_PHOTO
+
 from korneslov import is_valid_korneslov_query, fetch_full_korneslov_response
 from utils.utils import split_message, parse_references
 from texts.prompts import HELP_FORMAT
@@ -18,15 +20,24 @@ from db.books import find_book_entry
 from db.users import upsert_user, get_user
 from db.requests import add_request, update_request_response
 from db.responses import add_response
-from db.tribute import get_user_amount, set_user_amount
-from utils.tribute import can_use, is_unlimited
+##from db.tribute import get_user_amount, set_user_amount ## WILL DEPRECATED
+from utils.tribute import can_use, is_unlimited ## WILL DEPRECATED
+from db.tgpayments import add_tgpayment, get_user_amount,  atomic_update_user_amount_and_external_id
 
 
-logging.basicConfig(level=logging.INFO)
+##logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 
 bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher()
 dp.include_router(router)
+
+
+## Critically required for continuation of payment process!! W/o it bot finished payment unsucc by timeout.
+@dp.pre_checkout_query()
+async def handle_pre_checkout(pre_checkout_query: types.PreCheckoutQuery):
+    print("PRE_CHECKOUT:", pre_checkout_query.model_dump_json(indent=2))
+    await pre_checkout_query.answer(ok=True)
 
 
 def pay_keyboard_for(uid: int) -> InlineKeyboardMarkup:
@@ -84,7 +95,8 @@ async def cmd_balance(message: types.Message):
         await message.answer(tr("tribute.no_use_tribute", lang=state['lang']), parse_mode="HTML")
 
 
-@dp.message(Command("buy"))
+## Deprecated - see "/tgbuy"
+##@dp.message(Command("buy"))
 async def cmd_buy(message: types.Message):
     state = get_user_state(message.from_user.id)
     if TESTMODE:
@@ -97,6 +109,47 @@ async def cmd_buy(message: types.Message):
         )
     else:
         await message.answer(tr("tribute.cmd_buy_no_use_tribute", lang=state['lang']), parse_mode="HTML")
+
+
+@dp.message(Command("tgbuy"))
+async def handle_tgbuy(message: types.Message):
+    state = get_user_state(message.from_user.id)
+    await message.bot.send_invoice(
+        chat_id=message.chat.id,
+        title=tr("tgpayment.tgbuy_title", lang=state['lang']),
+        description=tr("tgpayment.tgbuy_desc", lang=state['lang']),
+        payload="balance_10",  ## Same as `invoice_id` - id for product
+        provider_token=TGPAYMENT_PROVIDER_TOKEN,
+        currency=TGPAYMENT_PROVIDER_CURRENCY,
+        prices=[LabeledPrice(label=tr("tgpayment.tgbuy_price_label", lang=state['lang']), amount=TGPAYMENT_AMOUNT)],  # 100.00 RUB (in kopeykas !!)
+        start_parameter="buy_balance", 
+        photo_url=TGPAYMENT_PHOTO
+    )
+
+
+
+@dp.message(lambda message: message.successful_payment is not None)
+async def handle_successful_payment(message: types.Message):
+    state = get_user_state(message.from_user.id)
+    sp = message.successful_payment
+    ## Temp hardcoded to EUR and course 1:98 !! Need to implement this separately!!
+    eur_to_rub = 98
+    rub_amount = 0
+
+    if sp.currency == "EUR":
+        rub_amount = int(sp.total_amount * eur_to_rub / 100)
+    tx_id = sp.provider_payment_charge_id or sp.telegram_payment_charge_id
+
+    updated = await atomic_update_user_amount_and_external_id(
+        message.from_user.id,
+        rub_amount,
+        tx_id
+    )
+
+    if updated:
+        await message.answer(tr("tgpayment.tgbuy_payment_successful", lang=state['lang'], rub_amount=rub_amount))
+    else:
+        await message.answer(tr("tgpayment.tgbuy_payment_repeat", lang=state['lang']))
 
 
 ## Handle valid requests only.
@@ -189,7 +242,8 @@ async def handle_korneslov_query(message: types.Message, refs=None):
         if USE_TRIBUTE and not TESTMODE:
             requests_left = await get_user_amount(uid)
             if not is_unlimited(requests_left) and requests_left >= TRIBUTE_REQUEST_PRICE:
-                await set_user_requests_left(uid, requests_left - TRIBUTE_REQUEST_PRICE)
+                ##await set_user_requests_left(uid, requests_left - TRIBUTE_REQUEST_PRICE)
+                ##DEPRECATED:await set_user_amount(uid, requests_left - TRIBUTE_REQUEST_PRICE)
                 print(f"DBG: New user balance for user {uid} — {requests_left - TRIBUTE_REQUEST_PRICE}")
     except Exception as e:
         logging.exception(e)

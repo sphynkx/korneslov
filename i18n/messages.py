@@ -102,6 +102,13 @@ MESSAGES = {
             "handle_korneslov_query_testmode_no_use_tribute": "\n\n(Тестовый режим)",
             "handle_korneslov_query_exception": "Произошла ошибка генерации. Повторите запрос позже.",
         },
+        "tgpayment": {
+            "tgbuy_title": "Пополнение баланса",
+            "tgbuy_desc": "10 запросов к Корнеслову",
+            "tgbuy_price_label": "10 запросов",
+            "tgbuy_payment_successful": "Оплата прошла!! Баланс пополнен на {rub_amount}₽.",
+            "tgbuy_payment_repeat": "Этот платёж уже был обработан ранее.",
+        },
         "handle_korneslov_query": {
             "query_format_error": "Неверный формат запроса. Пример: бытие 1 1-3,5",
             "book_not_found": "Книга «{book}» не найдена в базе. Проверьте правильность названия.",
@@ -202,6 +209,13 @@ Example:
             "handle_korneslov_query_no_testmode_use_tribute": "❌ You have not available requests.\nPlease recharge your balance:", ## used twice
             "handle_korneslov_query_testmode_no_use_tribute": "\n\n(Test mode)",
             "handle_korneslov_query_exception": "A generation error occurred. Please try again later.",
+        },
+        "tgpayment": {
+            "tgbuy_title": "Balance replenishment",
+            "tgbuy_desc": "10 requests to Korneslov",
+            "tgbuy_price_label": "10 requests",
+            "tgbuy_payment_successful": "Payment completed!! Balance refilled by {rub_amount}₽.",
+            "tgbuy_payment_repeat": "This payment has already been processed.",
         },
         "handle_korneslov_query": {
             "query_format_error": "Query format error. Example: genesis 1 1-3,5",

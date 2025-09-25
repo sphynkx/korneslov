@@ -1,7 +1,7 @@
 aiogram==3.4.1
 ##Flask==3.0.3
-quart>=0.19.3
-uvicorn[standard]>=0.22.0
+##quart>=0.19.3
+##uvicorn[standard]>=0.22.0
 python-dotenv==1.0.1
 openai<1.38
 httpx[socks]<0.26

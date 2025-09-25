@@ -73,6 +73,7 @@ def oplata_menu(msg=None):
     kb = [
         [
             KeyboardButton(text="/buy"),
+            KeyboardButton(text="/tgbuy"),
             KeyboardButton(text="/balance"),
         ],
         [

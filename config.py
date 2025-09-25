@@ -19,13 +19,20 @@ DB_PASS = os.getenv("DB_PASS", "")
 TESTMODE = os.getenv("TESTMODE", "False").lower() == "true"
 USE_TRIBUTE = os.getenv("USE_TRIBUTE", "False").lower() == "true"
 
-## Tribute support
+## Tribute support - will be DEPRECATED
 TRIBUTE_WEBHOOK_SECRET = os.getenv("TRIBUTE_WEBHOOK_SECRET", "")
 ##TRIBUTE_PRODUCT_10_ID = os.getenv("TRIBUTE_PRODUCT_10_ID", "prod_10_requests")
 ##TRIBUTE_PRODUCT_10_URL = os.getenv("TRIBUTE_PRODUCT_10_URL", "")
 ##QUERIES_FOR_10 = int(os.getenv("QUERIES_FOR_10", "10"))
 TRIBUTE_REQUEST_PRICE=int(os.getenv("TRIBUTE_REQUEST_PRICE", "10"))
 TRIBUTE_PAYMENT_URL=os.getenv("TRIBUTE_PAYMENT_URL", "https://tribute.tg/pay/PAYMENT_ID")
+
+## Telegram Bot Payment
+TGPAYMENT_PROVIDER_TOKEN = os.getenv("TGPAYMENT_PROVIDER_TOKEN", "TEST")
+TGPAYMENT_PROVIDER_CURRENCY = os.getenv("TGPAYMENT_PROVIDER_CURRENCY", "RUB")
+TGPAYMENT_AMOUNT = int(os.getenv("TGPAYMENT_AMOUNT", "1000"))
+TGPAYMENT_PHOTO = os.getenv("TGPAYMENT_PHOTO", "")
+
 
 ## OpenAI params
 OPENAI_MODEL = "gpt-5"
