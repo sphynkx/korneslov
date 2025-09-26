@@ -140,6 +140,15 @@ async def handle_successful_payment(message: types.Message):
         rub_amount = int(sp.total_amount * eur_to_rub / 100)
     tx_id = sp.provider_payment_charge_id or sp.telegram_payment_charge_id
 
+    ## Other hardcoded cources
+    if sp.currency == "UAH":
+        rub_amount = int(sp.total_amount * 45 / 100)
+    tx_id = sp.provider_payment_charge_id or sp.telegram_payment_charge_id
+
+    if sp.currency == "RUB":
+        rub_amount = int(sp.total_amount / 100)
+    tx_id = sp.provider_payment_charge_id or sp.telegram_payment_charge_id
+
     updated = await atomic_update_user_amount_and_external_id(
         message.from_user.id,
         rub_amount,
