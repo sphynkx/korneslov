@@ -28,22 +28,22 @@ TRIBUTE_REQUEST_PRICE=int(os.getenv("TRIBUTE_REQUEST_PRICE", "10"))
 TRIBUTE_PAYMENT_URL=os.getenv("TRIBUTE_PAYMENT_URL", "https://tribute.tg/pay/PAYMENT_ID")
 
 ## Telegram Bot Payment
-##TGPAYMENT_PROVIDER_TOKEN = os.getenv("TGPAYMENT_PROVIDER_TOKEN", "TEST")
-##TGPAYMENT_PROVIDER_CURRENCY = os.getenv("TGPAYMENT_PROVIDER_CURRENCY", "RUB")
+TGPAYMENT_PROVIDER_TOKEN = os.getenv("TGPAYMENT_PROVIDER_TOKEN", "TEST")
+TGPAYMENT_PROVIDER_CURRENCY = os.getenv("TGPAYMENT_PROVIDER_CURRENCY", "RUB")
 TGPAYMENT_AMOUNT = int(os.getenv("TGPAYMENT_AMOUNT", "1000"))
 TGPAYMENT_PHOTO = os.getenv("TGPAYMENT_PHOTO", "")
 
 TGPAYMENT_PROVIDERS = [
     {
-        "name": "Redsys",
-        "provider_token": "2051251535:TEST:OTk5MDA4ODgxLTAwNQ",
+        "name": "Provider1",
+        "provider_token": "1234567890:TEST:XXXXXXXXXXXXXXXXXX",
         "currency": "EUR",
         "country": "ES",
         "exchange_rate": 97.8,
     },
     {
-        "name": "Portmone",
-        "provider_token": "1661751239:TEST:UOis-G51K-pl7k-53zV",
+        "name": "Provider2",
+        "provider_token": "1234567890:TEST:XXXXXXXXXXXXXXXXXX",
         "currency": "UAH",
         "country": "UA",
         "exchange_rate": 2,

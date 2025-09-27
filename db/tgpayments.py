@@ -54,7 +54,7 @@ async def get_user_amount(user_id: int):
             return row[0]
 
 
-async def atomic_update_user_amount_and_external_id(user_id: int, delta: int, new_external_id: str) -> bool:
+async def set_user_amount(user_id: int, delta: int, new_external_id: str) -> bool:
     """
     Atomically add delta to user's amount and set external_id to new_external_id ONLY if external_id != new_external_id.
     Returns True if updated, False if not (i.e., already processed).

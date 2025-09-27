@@ -8,7 +8,8 @@ from menu import router, main_reply_keyboard
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, LabeledPrice
-from config import TELEGRAM_BOT_TOKEN, TRIBUTE_REQUEST_PRICE, TRIBUTE_PAYMENT_URL, USE_TRIBUTE, TESTMODE, TGPAYMENT_PROVIDER_TOKEN, TGPAYMENT_PROVIDER_CURRENCY, TGPAYMENT_AMOUNT, TGPAYMENT_PHOTO
+from config import TELEGRAM_BOT_TOKEN, TRIBUTE_REQUEST_PRICE, TRIBUTE_PAYMENT_URL, USE_TRIBUTE, TESTMODE, TGPAYMENT_AMOUNT, TGPAYMENT_PHOTO, TGPAYMENT_PROVIDERS
+from utils.tgpayments import get_provider_by_currency
 
 from korneslov import is_valid_korneslov_query, fetch_full_korneslov_response
 from utils.utils import split_message, parse_references
@@ -22,7 +23,7 @@ from db.requests import add_request, update_request_response
 from db.responses import add_response
 ##from db.tribute import get_user_amount, set_user_amount ## WILL DEPRECATED
 from utils.tribute import can_use, is_unlimited ## WILL DEPRECATED
-from db.tgpayments import add_tgpayment, get_user_amount,  atomic_update_user_amount_and_external_id
+from db.tgpayments import add_tgpayment, get_user_amount,  set_user_amount
 
 
 ##logging.basicConfig(level=logging.INFO)
@@ -88,7 +89,7 @@ async def cmd_balance(message: types.Message):
         ## Get balance via Tribute
         requests_left = await get_user_amount(message.from_user.id)
         await message.answer(
-            tr("tribute.use_tribute", lang=state['lang'], requests_left=requests_left),
+            tr("tgpayment.show_balance", lang=state['lang'], requests_left=requests_left),
             parse_mode="HTML"
         )
     else:
@@ -114,13 +115,18 @@ async def cmd_buy(message: types.Message):
 @dp.message(Command("tgbuy"))
 async def handle_tgbuy(message: types.Message):
     state = get_user_state(message.from_user.id)
+    currency = state.get("currency", "UAH")
+    provider = get_provider_by_currency(currency)
+    if not provider:
+        await message.answer(tr("tgpayment.tgbuy_invalid_currency", lang=state['lang'], currency=currency))
+        return
     await message.bot.send_invoice(
         chat_id=message.chat.id,
         title=tr("tgpayment.tgbuy_title", lang=state['lang']),
         description=tr("tgpayment.tgbuy_desc", lang=state['lang']),
         payload="balance_10",  ## Same as `invoice_id` - id for product
-        provider_token=TGPAYMENT_PROVIDER_TOKEN,
-        currency=TGPAYMENT_PROVIDER_CURRENCY,
+        provider_token=provider["provider_token"],
+        currency=currency,
         prices=[LabeledPrice(label=tr("tgpayment.tgbuy_price_label", lang=state['lang']), amount=TGPAYMENT_AMOUNT)],  # 100.00 RUB (in kopeykas !!)
         start_parameter="buy_balance", 
         photo_url=TGPAYMENT_PHOTO
@@ -132,31 +138,27 @@ async def handle_tgbuy(message: types.Message):
 async def handle_successful_payment(message: types.Message):
     state = get_user_state(message.from_user.id)
     sp = message.successful_payment
-    ## Temp hardcoded to EUR and course 1:98 !! Need to implement this separately!!
-    eur_to_rub = 98
-    rub_amount = 0
+    currency = sp.currency
+    provider = get_provider_by_currency(currency)
+    if not provider:
+        await message.answer(tr("tgpayment.tgbuy_invalid_currency", lang=state['lang'], currency=currency))
+        return
 
-    if sp.currency == "EUR":
-        rub_amount = int(sp.total_amount * eur_to_rub / 100)
+    exchange_rate = provider.get("exchange_rate", 1)  ## Default is 1
+
+    ## Recount to base currency
+    money_amount = int(sp.total_amount * exchange_rate / 100)
+
     tx_id = sp.provider_payment_charge_id or sp.telegram_payment_charge_id
 
-    ## Other hardcoded cources
-    if sp.currency == "UAH":
-        rub_amount = int(sp.total_amount * 2 / 100)
-    tx_id = sp.provider_payment_charge_id or sp.telegram_payment_charge_id
-
-    if sp.currency == "RUB":
-        rub_amount = int(sp.total_amount / 100)
-    tx_id = sp.provider_payment_charge_id or sp.telegram_payment_charge_id
-
-    updated = await atomic_update_user_amount_and_external_id(
+    updated = await set_user_amount(
         message.from_user.id,
-        rub_amount,
+        money_amount,
         tx_id
     )
 
     if updated:
-        await message.answer(tr("tgpayment.tgbuy_payment_successful", lang=state['lang'], rub_amount=rub_amount))
+        await message.answer(tr("tgpayment.tgbuy_payment_successful", lang=state['lang'], money_amount=money_amount))
     else:
         await message.answer(tr("tgpayment.tgbuy_payment_repeat", lang=state['lang']))
 

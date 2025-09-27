@@ -103,10 +103,11 @@ MESSAGES = {
             "handle_korneslov_query_exception": "Произошла ошибка генерации. Повторите запрос позже.",
         },
         "tgpayment": {
+            "show_balance": "Ваш баланс: <b>{requests_left}</b> кредитов.",
             "tgbuy_title": "Пополнение баланса",
             "tgbuy_desc": "10 кредитов к Корнеслову",
             "tgbuy_price_label": "10 кредитов",
-            "tgbuy_payment_successful": "Оплата прошла!! Баланс пополнен на {rub_amount} кредитов.",
+            "tgbuy_payment_successful": "Оплата прошла!! Баланс пополнен на {money_amount} кредитов.",
             "tgbuy_payment_repeat": "Этот платеж уже был обработан ранее.",
         },
         "handle_korneslov_query": {
@@ -211,10 +212,11 @@ Example:
             "handle_korneslov_query_exception": "A generation error occurred. Please try again later.",
         },
         "tgpayment": {
+            "show_balance": "Your balance: <b>{requests_left}</b> credits.",
             "tgbuy_title": "Balance replenishment",
             "tgbuy_desc": "10 credits to Korneslov",
             "tgbuy_price_label": "10 credits",
-            "tgbuy_payment_successful": "Payment completed!! Balance refilled by {rub_amount} credits.",
+            "tgbuy_payment_successful": "Payment completed!! Balance refilled by {money_amount} credits.",
             "tgbuy_payment_repeat": "This payment has already been processed.",
         },
         "handle_korneslov_query": {

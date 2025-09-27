@@ -8,7 +8,7 @@ venv/
 texts/
 ##texts/*
 ##!texts/.gitkeep
-##config.py
+config.py
 *.db
 *.sql
 install/conf_db.sql

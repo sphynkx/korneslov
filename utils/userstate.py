@@ -7,7 +7,8 @@ def get_user_state(user_id):
         "method": "korneslov",
         "direction": "masoret",
         "level": "hard",
-        "lang": "ru"
+        "lang": "ru",
+        "currency": "UAH"
     }
     if user_id not in user_state:
         user_state[user_id] = default.copy()
