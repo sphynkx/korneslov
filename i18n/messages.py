@@ -104,10 +104,10 @@ MESSAGES = {
         },
         "tgpayment": {
             "tgbuy_title": "Пополнение баланса",
-            "tgbuy_desc": "10 запросов к Корнеслову",
-            "tgbuy_price_label": "10 запросов",
-            "tgbuy_payment_successful": "Оплата прошла!! Баланс пополнен на {rub_amount}₽.",
-            "tgbuy_payment_repeat": "Этот платёж уже был обработан ранее.",
+            "tgbuy_desc": "10 кредитов к Корнеслову",
+            "tgbuy_price_label": "10 кредитов",
+            "tgbuy_payment_successful": "Оплата прошла!! Баланс пополнен на {rub_amount} кредитов.",
+            "tgbuy_payment_repeat": "Этот платеж уже был обработан ранее.",
         },
         "handle_korneslov_query": {
             "query_format_error": "Неверный формат запроса. Пример: бытие 1 1-3,5",
@@ -212,9 +212,9 @@ Example:
         },
         "tgpayment": {
             "tgbuy_title": "Balance replenishment",
-            "tgbuy_desc": "10 requests to Korneslov",
-            "tgbuy_price_label": "10 requests",
-            "tgbuy_payment_successful": "Payment completed!! Balance refilled by {rub_amount}₽.",
+            "tgbuy_desc": "10 credits to Korneslov",
+            "tgbuy_price_label": "10 credits",
+            "tgbuy_payment_successful": "Payment completed!! Balance refilled by {rub_amount} credits.",
             "tgbuy_payment_repeat": "This payment has already been processed.",
         },
         "handle_korneslov_query": {

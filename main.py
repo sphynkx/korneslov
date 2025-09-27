@@ -142,7 +142,7 @@ async def handle_successful_payment(message: types.Message):
 
     ## Other hardcoded cources
     if sp.currency == "UAH":
-        rub_amount = int(sp.total_amount * 45 / 100)
+        rub_amount = int(sp.total_amount * 2 / 100)
     tx_id = sp.provider_payment_charge_id or sp.telegram_payment_charge_id
 
     if sp.currency == "RUB":
