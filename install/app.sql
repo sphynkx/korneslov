@@ -54,19 +54,6 @@ CREATE TABLE IF NOT EXISTS responses (
     FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE
 );
 
--- Deprecated
-CREATE TABLE IF NOT EXISTS tribute (
-    id INT AUTO_INCREMENT PRIMARY KEY,
-    user_id BIGINT NOT NULL,
-    product_id VARCHAR(128) NOT NULL,
-    amount DECIMAL(12,2) NOT NULL,
-    currency VARCHAR(8) NOT NULL,
-    status VARCHAR(16) NOT NULL,
-    external_id VARCHAR(64) NOT NULL,
-    datetime DATETIME NOT NULL,
-    raw_json TEXT,
-    UNIQUE KEY (external_id)
-);
 
 -- Telegram Bot Payment
 CREATE TABLE IF NOT EXISTS tgpayments (

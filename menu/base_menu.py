@@ -69,11 +69,10 @@ def rishi_menu(msg=None):
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
 
 
-def oplata_menu(msg=None):
+def oplata_menu(msg=None, lang="ru"):
     kb = [
         [
-            KeyboardButton(text="/buy"),
-            KeyboardButton(text="/tgbuy"),
+            KeyboardButton(text=tr("tgpayment.pay_button", lang=get_user_state(msg.from_user.id)["lang"])),
             KeyboardButton(text="/balance"),
         ],
         [

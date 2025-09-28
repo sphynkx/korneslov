@@ -3,26 +3,31 @@ import logging
 import re
 import json
 from itertools import groupby
-from datetime import datetime
-from menu import router, main_reply_keyboard
+from datetime import datetime, date
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, LabeledPrice
-from config import TELEGRAM_BOT_TOKEN, TRIBUTE_REQUEST_PRICE, TRIBUTE_PAYMENT_URL, USE_TRIBUTE, TESTMODE, TGPAYMENT_AMOUNT, TGPAYMENT_PHOTO, TGPAYMENT_PROVIDERS
-from utils.tgpayments import get_provider_by_currency
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, LabeledPrice, CallbackQuery
 
-from korneslov import is_valid_korneslov_query, fetch_full_korneslov_response
-from utils.utils import split_message, parse_references
-from texts.prompts import HELP_FORMAT
-from utils.userstate import get_user_state
+from config import TELEGRAM_BOT_TOKEN, TRIBUTE_REQUEST_PRICE, TRIBUTE_PAYMENT_URL, USE_TRIBUTE, TESTMODE, TGPAYMENT_PHOTO, TGPAYMENT_PROVIDERS
+
+from menu.base_menu import router, main_reply_keyboard, oplata_menu
+from menu.tgpayment_menu import payment_confirmation_keyboard, get_currency_keyboard
+
 from i18n.messages import tr
+from texts.prompts import HELP_FORMAT
+from korneslov import is_valid_korneslov_query, fetch_full_korneslov_response
+
+##from utils.tribute import can_use, is_unlimited ## WILL DEPRECATED
+from utils.utils import split_message, parse_references
+from utils.userstate import get_user_state
+from utils.tgpayments import get_provider_by_currency, can_use, is_unlimited
+
 from db import get_conn
 from db.books import find_book_entry
 from db.users import upsert_user, get_user
 from db.requests import add_request, update_request_response
 from db.responses import add_response
 ##from db.tribute import get_user_amount, set_user_amount ## WILL DEPRECATED
-from utils.tribute import can_use, is_unlimited ## WILL DEPRECATED
 from db.tgpayments import add_tgpayment, get_user_amount,  set_user_amount
 
 
@@ -96,6 +101,7 @@ async def cmd_balance(message: types.Message):
         await message.answer(tr("tribute.no_use_tribute", lang=state['lang']), parse_mode="HTML")
 
 
+'''
 ## Deprecated - see "/tgbuy"
 ##@dp.message(Command("buy"))
 async def cmd_buy(message: types.Message):
@@ -110,8 +116,12 @@ async def cmd_buy(message: types.Message):
         )
     else:
         await message.answer(tr("tribute.cmd_buy_no_use_tribute", lang=state['lang']), parse_mode="HTML")
+'''
 
+## tgpayment block
 
+'''
+## Will deprecated also
 @dp.message(Command("tgbuy"))
 async def handle_tgbuy(message: types.Message):
     state = get_user_state(message.from_user.id)
@@ -131,7 +141,40 @@ async def handle_tgbuy(message: types.Message):
         start_parameter="buy_balance", 
         photo_url=TGPAYMENT_PHOTO
     )
+'''
 
+
+@dp.callback_query(lambda c: c.data == "tgpay_confirm")
+async def handle_tgpay_confirm(callback: CallbackQuery):
+    state = get_user_state(callback.from_user.id)
+    currency = state.get("currency", "UAH")
+    amount = state.get("amount")
+
+    provider = get_provider_by_currency(currency)
+    if not provider:
+        await callback.message.answer(tr("tgpayment.tgbuy_invalid_currency", lang=state['lang'], currency=currency))
+        await callback.answer()
+        return
+
+    if not amount or not str(amount).isdigit() or int(amount) <= 0:
+        await callback.message.answer(tr("tgpayment.invalid_amount", lang=state['lang']))
+        await callback.answer()
+        return
+
+    invoice_amount = int(amount) * 100
+
+    await callback.message.bot.send_invoice(
+        chat_id=callback.message.chat.id,
+        title=tr("tgpayment.tgbuy_title", lang=state["lang"]),
+        description=tr("tgpayment.tgbuy_desc", lang=state["lang"]),
+        payload="balance_custom",
+        provider_token=provider["provider_token"],
+        currency=currency,
+        prices=[LabeledPrice(label=tr("tgpayment.tgbuy_price_label", lang=state["lang"]), amount=invoice_amount)],
+        start_parameter="buy_balance",
+        photo_url=TGPAYMENT_PHOTO
+    )
+    await callback.answer()
 
 
 @dp.message(lambda message: message.successful_payment is not None)
@@ -157,10 +200,123 @@ async def handle_successful_payment(message: types.Message):
         tx_id
     )
 
+    ## Prepare other params to DB-write
+    payload = getattr(sp, "invoice_payload", None)
+    amount = money_amount
+    datetime_val = datetime.now().isoformat()
+    ## Func to serialize payment info.. some troubles with aiogram's json handlings
+    def default_serializer(obj):
+        if isinstance(obj, (datetime, date)):
+            return obj.isoformat()
+        raise TypeError(f"Type {type(obj)} not serializable")
+    raw_json = json.dumps(message.model_dump(), default=default_serializer)
+
+    await add_tgpayment(
+        user_id=message.from_user.id,
+        payload=payload,
+        amount=amount,
+        currency=currency,
+        status="paid",
+        provider_payment_charge_id=sp.provider_payment_charge_id,
+        telegram_payment_charge_id=sp.telegram_payment_charge_id,
+        datetime_val=datetime_val,
+        raw_json=raw_json,
+    )
     if updated:
         await message.answer(tr("tgpayment.tgbuy_payment_successful", lang=state['lang'], money_amount=money_amount))
     else:
         await message.answer(tr("tgpayment.tgbuy_payment_repeat", lang=state['lang']))
+    ## Show Payment menu - after payment process.
+    await message.answer(
+        tr("main_menu.welcome", lang=state['lang']),
+        reply_markup=oplata_menu(msg=message, lang=state['lang'])
+    )
+
+
+@dp.message(lambda m: m.text == tr("tgpayment.pay_button", lang=get_user_state(m.from_user.id)["lang"]))
+async def cmd_pay(message: types.Message):
+    state = get_user_state(message.from_user.id)
+    ## Show currency choose menu
+    await message.answer(
+        tr("tgpayment.choose_currency", lang=state["lang"]),
+        reply_markup=get_currency_keyboard(lang=state["lang"])
+    )
+
+
+@dp.callback_query(lambda c: c.data.startswith("tgpay_currency_"))
+async def handle_currency_choice(callback: types.CallbackQuery):
+    currency = callback.data.replace("tgpay_currency_", "")
+    state = get_user_state(callback.from_user.id)
+    state["await_amount"] = True
+    state["currency"] = currency  ## Store chosen currency
+    await callback.message.answer(
+        tr("tgpayment.enter_amount", lang=state["lang"], currency=currency)
+    )
+    await callback.answer()
+
+
+## Correct amount input (digits only)
+@dp.message(lambda m: get_user_state(m.from_user.id).get("await_amount") is True and m.text.isdigit())
+async def handle_amount_input(message: types.Message):
+    state = get_user_state(message.from_user.id)
+    amount = int(message.text)
+    state["amount"] = amount
+    state["await_amount"] = False
+    await message.answer(
+        tr("tgpayment.approve_amount", lang=state["lang"], amount=amount, currency=state['currency']),
+        reply_markup=payment_confirmation_keyboard(lang=state["lang"])
+    )
+
+
+## Incorrect amount input (not a digits)
+@dp.message(lambda m: get_user_state(m.from_user.id).get("await_amount") is True and not m.text.isdigit())
+async def handle_wrong_amount(message: types.Message):
+    state = get_user_state(message.from_user.id)
+    await message.answer(tr("tgpayment.wrong_amount", lang=state["lang"]))
+    ## flush flags
+    state.pop("await_amount", None)
+    state.pop("amount", None)
+    state.pop("currency", None)
+    ##state["await_amount"] = False  ## Flush await of amount input!!
+    ## Return to menu
+    await message.answer(
+        tr("oplata_menu.prompt", msg=message, lang=state["lang"]),
+        reply_markup=oplata_menu(msg=message, lang=state["lang"])
+    )
+
+
+@dp.callback_query(lambda c: c.data == "tgpay_back_to_payment_menu")
+async def handle_back_to_payment_menu(callback: types.CallbackQuery):
+    state = get_user_state(callback.from_user.id)
+    lang = state.get("lang", "ru")
+    ## flush flags
+    state.pop("await_amount", None)
+    state.pop("amount", None)
+    state.pop("currency", None)
+    ## Return to Payment menu
+    await callback.message.answer(
+        tr("oplata_menu.prompt", lang=get_user_state(callback.from_user.id)["lang"]),
+        reply_markup=oplata_menu(msg=callback.message, lang=lang)
+    )
+    await callback.answer()
+
+
+@dp.callback_query(lambda c: c.data == "tgpay_back")
+async def handle_tgpay_back(callback: CallbackQuery):
+    state = get_user_state(callback.from_user.id)
+    lang = state.get("lang", "ru")
+    ## Flush awaiting amount/flags
+    state.pop("await_amount", None)
+    state.pop("amount", None)
+    ## Return to Choose currency menu
+    await callback.message.answer(
+        tr("tgpayment.choose_currency", lang=state.get("lang", "ru")),
+        reply_markup=get_currency_keyboard(lang=state.get("lang", "ru"))
+    )
+    await callback.answer()
+
+
+## end of tgpayment
 
 
 ## Handle valid requests only.
@@ -173,17 +329,18 @@ async def handle_korneslov_query(message: types.Message, refs=None):
     level = state.get("level", "hard")
     lang = state.get("lang", "ru")
 
-    ## check balance via Tribute
-    if USE_TRIBUTE and not TESTMODE:
-        requests_left = await get_user_amount(uid)
-        print(f"DBG: User balance {uid} — {requests_left}")
-        if not can_use(requests_left):
-            kb = pay_keyboard_for(uid)
-            await message.answer(
-                tr("tribute.handle_korneslov_query_no_testmode_use_tribute", lang=state['lang']),
-                reply_markup=kb, parse_mode="HTML"
-            )
-            return
+    ## Check balance before request generation
+    requests_left = await get_user_amount(uid)
+    from config import TGPAYMENT_REQUEST_PRICES
+    price = TGPAYMENT_REQUEST_PRICES.get(level, 1)
+    ## check for unlim
+    if requests_left != -1 and requests_left < price:
+        kb = pay_keyboard_for(uid)
+        await message.answer(
+            tr("tribute.handle_korneslov_query_no_testmode_use_tribute", lang=state['lang']),
+            reply_markup=kb, parse_mode="HTML"
+        )
+        return
 
     ## Logging user to DB (upsert)
     user = message.from_user
@@ -238,8 +395,6 @@ async def handle_korneslov_query(message: types.Message, refs=None):
         answer = await fetch_full_korneslov_response(
             book, chapter, verses_str, uid, level=level
         )
-        if TESTMODE or not USE_TRIBUTE:
-            answer += tr("tribute.handle_korneslov_query_testmode_no_use_tribute", lang=state['lang'])
         for part in split_message(answer):
             part = re.sub(r'<br.*?>', '', part)
             await message.answer(part, parse_mode="HTML")
@@ -249,13 +404,12 @@ async def handle_korneslov_query(message: types.Message, refs=None):
         ## Refresh status as successful
         await update_request_response(req_id, status_oai=True, status_tg=True)
 
-        ## Write off request from balance (if not unlim and only if successful!!)
-        if USE_TRIBUTE and not TESTMODE:
-            requests_left = await get_user_amount(uid)
-            if not is_unlimited(requests_left) and requests_left >= TRIBUTE_REQUEST_PRICE:
-                ##await set_user_requests_left(uid, requests_left - TRIBUTE_REQUEST_PRICE)
-                ##DEPRECATED:await set_user_amount(uid, requests_left - TRIBUTE_REQUEST_PRICE)
-                print(f"DBG: New user balance for user {uid} — {requests_left - TRIBUTE_REQUEST_PRICE}")
+        ## Decrement credits if not unlim and if success
+        requests_left = await get_user_amount(uid)
+        if requests_left != -1 and requests_left >= price:
+            updated = await set_user_amount(uid, -price, str(req_id))
+            print(f"DBG: New user balance for user {uid} — {requests_left - price}")
+
     except Exception as e:
         logging.exception(e)
         ## Refresh status as error
