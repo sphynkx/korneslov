@@ -1,6 +1,6 @@
 from db.tgpayments import get_user_amount, set_user_amount, set_user_amount
 from config import TGPAYMENT_PROVIDERS, TGPAYMENT_REQUEST_PRICES
-from utils.userstate import get_user_state
+##from utils.userstate import get_user_state
 
 
 def get_provider_by_currency(currency: str):
