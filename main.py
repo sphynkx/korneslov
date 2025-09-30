@@ -20,7 +20,7 @@ from korneslov import is_valid_korneslov_query, fetch_full_korneslov_response
 ##from utils.tribute import can_use, is_unlimited ## WILL DEPRECATED
 from utils.utils import split_message, parse_references
 from utils.userstate import get_user_state
-from utils.tgpayments import get_provider_by_currency, can_use, is_unlimited
+from utils.tgpayments import get_provider_by_currency, can_use, is_unlimited, reset_payment_state
 
 from db import get_conn
 from db.books import find_book_entry
@@ -32,7 +32,7 @@ from db.tgpayments import add_tgpayment, get_user_amount,  set_user_amount
 
 
 ##logging.basicConfig(level=logging.INFO)
-logging.basicConfig(level=logging.DEBUG)
+##logging.basicConfig(level=logging.DEBUG)
 
 bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher()
@@ -85,64 +85,11 @@ async def cmd_start(message: types.Message):
     await message.answer(msg_text, reply_markup=main_reply_keyboard(), parse_mode="HTML")
 
 
-@dp.message(Command("balance"))
-async def cmd_balance(message: types.Message):
-    state = get_user_state(message.from_user.id)
-    if TESTMODE:
-        await message.answer(tr("tribute.testmode", lang=state['lang']), parse_mode="HTML")
-    elif USE_TRIBUTE:
-        ## Get balance via Tribute
-        requests_left = await get_user_amount(message.from_user.id)
-        await message.answer(
-            tr("tgpayment.show_balance", lang=state['lang'], requests_left=requests_left),
-            parse_mode="HTML"
-        )
-    else:
-        await message.answer(tr("tribute.no_use_tribute", lang=state['lang']), parse_mode="HTML")
 
 
-'''
-## Deprecated - see "/tgbuy"
-##@dp.message(Command("buy"))
-async def cmd_buy(message: types.Message):
-    state = get_user_state(message.from_user.id)
-    if TESTMODE:
-        await message.answer(tr("tribute.cmd_buy_testmode", lang=state['lang']), parse_mode="HTML")
-    elif USE_TRIBUTE:
-        kb = pay_keyboard_for(message.from_user.id)
-        await message.answer(
-            tr("tribute.cmd_buy_use_tribute", lang=state['lang']),
-            reply_markup=kb, parse_mode="HTML"
-        )
-    else:
-        await message.answer(tr("tribute.cmd_buy_no_use_tribute", lang=state['lang']), parse_mode="HTML")
-'''
+
 
 ## tgpayment block
-
-'''
-## Will deprecated also
-@dp.message(Command("tgbuy"))
-async def handle_tgbuy(message: types.Message):
-    state = get_user_state(message.from_user.id)
-    currency = state.get("currency", "UAH")
-    provider = get_provider_by_currency(currency)
-    if not provider:
-        await message.answer(tr("tgpayment.tgbuy_invalid_currency", lang=state['lang'], currency=currency))
-        return
-    await message.bot.send_invoice(
-        chat_id=message.chat.id,
-        title=tr("tgpayment.tgbuy_title", lang=state['lang']),
-        description=tr("tgpayment.tgbuy_desc", lang=state['lang']),
-        payload="balance_10",  ## Same as `invoice_id` - id for product
-        provider_token=provider["provider_token"],
-        currency=currency,
-        prices=[LabeledPrice(label=tr("tgpayment.tgbuy_price_label", lang=state['lang']), amount=TGPAYMENT_AMOUNT)],  # 100.00 RUB (in kopeykas !!)
-        start_parameter="buy_balance", 
-        photo_url=TGPAYMENT_PHOTO
-    )
-'''
-
 
 @dp.callback_query(lambda c: c.data == "tgpay_confirm")
 async def handle_tgpay_confirm(callback: CallbackQuery):
@@ -231,18 +178,41 @@ async def handle_successful_payment(message: types.Message):
         tr("main_menu.welcome", lang=state['lang']),
         reply_markup=oplata_menu(msg=message, lang=state['lang'])
     )
-
-
-@dp.message(lambda m: m.text == tr("tgpayment.pay_button", lang=get_user_state(m.from_user.id)["lang"]))
-async def cmd_pay(message: types.Message):
-    state = get_user_state(message.from_user.id)
-    ## Show currency choose menu
+    ## Afta succ payment - show main keyboard
     await message.answer(
-        tr("tgpayment.choose_currency", lang=state["lang"]),
-        reply_markup=get_currency_keyboard(lang=state["lang"])
+        tr("main_menu.welcome", lang=state['lang']),
+        reply_markup=main_reply_keyboard(msg=message, lang=state['lang'])
     )
 
 
+## Callback func for show balance - instead of "/balance"
+@dp.callback_query(lambda c: c.data == "tgpay_balance")
+async def handle_balance_callback(callback: types.CallbackQuery):
+    state = get_user_state(callback.from_user.id)
+    lang = state.get("lang", "ru")
+    balance = await get_user_amount(callback.from_user.id)
+    await callback.message.answer(
+        tr("tgpayment.balance_text", lang=lang, amount=balance)
+    )
+    await callback.answer()
+
+
+## Pay option - choose currency
+@dp.callback_query(lambda c: c.data == "tgpay_pay")
+async def cmd_pay_callback(callback: types.CallbackQuery):
+    state = get_user_state(callback.from_user.id)
+    lang = state.get("lang", "ru")
+    ## Flush flags befor menu forming (maybe no need)
+    reset_payment_state(state)
+    state["await_amount"] = False
+    await callback.message.answer(
+        tr("tgpayment.choose_currency", lang=lang),
+        reply_markup=get_currency_keyboard(lang=lang)
+    )
+    await callback.answer()
+
+
+## Choose currency from list. Next - enter sum.
 @dp.callback_query(lambda c: c.data.startswith("tgpay_currency_"))
 async def handle_currency_choice(callback: types.CallbackQuery):
     currency = callback.data.replace("tgpay_currency_", "")
@@ -259,12 +229,13 @@ async def handle_currency_choice(callback: types.CallbackQuery):
 @dp.message(lambda m: get_user_state(m.from_user.id).get("await_amount") is True and m.text.isdigit())
 async def handle_amount_input(message: types.Message):
     state = get_user_state(message.from_user.id)
+    lang = state.get("lang", "ru")
     amount = int(message.text)
     state["amount"] = amount
     state["await_amount"] = False
     await message.answer(
-        tr("tgpayment.approve_amount", lang=state["lang"], amount=amount, currency=state['currency']),
-        reply_markup=payment_confirmation_keyboard(lang=state["lang"])
+        tr("tgpayment.approve_amount", lang=lang, amount=amount, currency=state.get('currency', '')),
+        reply_markup=payment_confirmation_keyboard(lang=lang)
     )
 
 
@@ -272,33 +243,14 @@ async def handle_amount_input(message: types.Message):
 @dp.message(lambda m: get_user_state(m.from_user.id).get("await_amount") is True and not m.text.isdigit())
 async def handle_wrong_amount(message: types.Message):
     state = get_user_state(message.from_user.id)
-    await message.answer(tr("tgpayment.wrong_amount", lang=state["lang"]))
-    ## flush flags
-    state.pop("await_amount", None)
-    state.pop("amount", None)
-    state.pop("currency", None)
-    ##state["await_amount"] = False  ## Flush await of amount input!!
-    ## Return to menu
-    await message.answer(
-        tr("oplata_menu.prompt", msg=message, lang=state["lang"]),
-        reply_markup=oplata_menu(msg=message, lang=state["lang"])
-    )
-
-
-@dp.callback_query(lambda c: c.data == "tgpay_back_to_payment_menu")
-async def handle_back_to_payment_menu(callback: types.CallbackQuery):
-    state = get_user_state(callback.from_user.id)
     lang = state.get("lang", "ru")
-    ## flush flags
-    state.pop("await_amount", None)
-    state.pop("amount", None)
-    state.pop("currency", None)
-    ## Return to Payment menu
-    await callback.message.answer(
-        tr("oplata_menu.prompt", lang=get_user_state(callback.from_user.id)["lang"]),
-        reply_markup=oplata_menu(msg=callback.message, lang=lang)
+    await message.answer(tr("tgpayment.wrong_amount", lang=lang))
+    ## Flush payment flags
+    reset_payment_state(state)
+    await message.answer(
+        tr("oplata_menu.prompt", lang=lang),
+        reply_markup=oplata_menu(lang=lang)
     )
-    await callback.answer()
 
 
 @dp.callback_query(lambda c: c.data == "tgpay_back")

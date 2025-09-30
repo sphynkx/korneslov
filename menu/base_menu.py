@@ -1,5 +1,5 @@
 from aiogram import Router, types
-from aiogram.types import ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMarkup, InlineKeyboardButton
 import json
 from utils.utils import get_statistics_text
 from i18n.messages import tr
@@ -8,21 +8,21 @@ from utils.userstate import get_user_state
 router = Router()
 
 
-def main_reply_keyboard(msg=None):
+def main_reply_keyboard(msg=None, lang="ru"):
     kb = [
         [
-            KeyboardButton(text=tr("main_menu.test1", msg=msg)),
-            KeyboardButton(text=tr("main_menu.test2", msg=msg)),
-            KeyboardButton(text=tr("main_menu.test3", msg=msg))
+            KeyboardButton(text=tr("main_menu.test1", msg=msg, lang=lang)),
+            KeyboardButton(text=tr("main_menu.test2", msg=msg, lang=lang)),
+            KeyboardButton(text=tr("main_menu.test3", msg=msg, lang=lang))
         ],
         [
-            KeyboardButton(text=tr("main_menu.language", msg=msg)),
-            KeyboardButton(text=tr("main_menu.korneslov", msg=msg))
+            KeyboardButton(text=tr("main_menu.language", msg=msg, lang=lang)),
+            KeyboardButton(text=tr("main_menu.korneslov", msg=msg, lang=lang))
         ],
         [
-            KeyboardButton(text=tr("main_menu.payment", msg=msg)),
-            KeyboardButton(text=tr("main_menu.stats", msg=msg)),
-            KeyboardButton(text=tr("main_menu.help", msg=msg))
+            KeyboardButton(text=tr("main_menu.payment", msg=msg, lang=lang)),
+            KeyboardButton(text=tr("main_menu.stats", msg=msg, lang=lang)),
+            KeyboardButton(text=tr("main_menu.help", msg=msg, lang=lang))
         ]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
@@ -70,16 +70,12 @@ def rishi_menu(msg=None):
 
 
 def oplata_menu(msg=None, lang="ru"):
-    kb = [
-        [
-            KeyboardButton(text=tr("tgpayment.pay_button", lang=get_user_state(msg.from_user.id)["lang"])),
-            KeyboardButton(text="/balance"),
-        ],
-        [
-            KeyboardButton(text=tr("oplata_menu.back_to_main", msg=msg))
-        ]
-    ]
-    return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+    if msg is not None:
+        lang = get_user_state(msg.from_user.id).get("lang", lang)
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=tr("tgpayment.pay_button", lang=lang), callback_data="tgpay_pay")],
+        [InlineKeyboardButton(text=tr("tgpayment.balance_button", lang=lang), callback_data="tgpay_balance")],
+    ])
 
 
 def language_menu(msg=None):
@@ -115,7 +111,6 @@ Current state:
 async def handle_masoret(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     state["direction"] = "masoret"
-    ##state["level"] = None
     await msg.answer(
         f"""{tr("masoret_menu.prompt", msg=msg)}
 
@@ -129,7 +124,6 @@ Current state:\n<code>{json.dumps(state, ensure_ascii=False)}</code>""",
 async def handle_rishi(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     state["direction"] = "rishi"
-    ##state["level"] = None
     await msg.answer(
         f"{tr('rishi_menu.prompt', msg=msg)}\n\n______________\nCurrent state:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         reply_markup=rishi_menu(msg=msg), parse_mode="HTML"
@@ -168,7 +162,7 @@ async def handle_language_menu(msg: types.Message):
     ## Swap language
     new_lang = "en" if current_lang == "ru" else "ru"
     state["lang"] = new_lang
-    print("AFTA change:", get_user_state(msg.from_user.id))
+    print("DBG: Lang AFTA change:", get_user_state(msg.from_user.id))
     ## Send new menu with new keyboard and welcome-msg.
     await msg.answer(
         tr("main_menu.welcome", msg=msg),
@@ -210,9 +204,7 @@ async def handle_statistika(msg: types.Message):
 @router.message()
 async def echo(msg: types.Message):
     state = get_user_state(msg.from_user.id)
-##    await msg.answer(f"{tr('main_menu.unknown_command', msg=msg)}\n\n<code>{json.dumps(state, ensure_ascii=False)}</code>")
     await msg.answer(f"{tr('handle_korneslov_query.query_format_error', msg=msg)}\n\n<code>{json.dumps(state, ensure_ascii=False)}</code>")
-
 
 
 

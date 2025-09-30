@@ -24,3 +24,10 @@ def can_use(requests_left, level="light"):
     return is_unlimited(requests_left) or (requests_left >= price)
 
 
+## Flush all flags, critical for payment menus
+def reset_payment_state(state):
+    print(f"DBG ResetState BEFOR: {state=}")
+    for key in ["await_amount", "amount", "currency", "method", "direction"]:
+        state.pop(key, None)
+    print(f"DBG ResetState AFTA: {state=}")
+

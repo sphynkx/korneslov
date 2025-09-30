@@ -21,11 +21,5 @@ def get_currency_keyboard(lang="ru"):
             text=f"{cur}",  ## Here could set translation or symbol for currency
             callback_data=f"tgpay_currency_{cur}"
         )])
-    keyboard.append([
-        InlineKeyboardButton(
-            text=tr("oplata_menu.back_to_main", lang=lang),
-            callback_data="tgpay_back_to_payment_menu"
-        )
-    ])
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 

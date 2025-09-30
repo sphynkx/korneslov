@@ -105,6 +105,8 @@ MESSAGES = {
         "tgpayment": {
             "show_balance": "Ваш баланс: <b>{requests_left}</b> кредитов.",
             "tgbuy_title": "Пополнение баланса",
+            "balance_button": "Баланс",
+            "balance_text": "Ваш текущий баланс: {amount} кредитов.",
             "tgbuy_desc": "10 кредитов к Корнеслову",
             "tgbuy_price_label": "10 кредитов",
             "tgbuy_payment_successful": "Оплата прошла!! Баланс пополнен на {money_amount} кредитов.",
@@ -221,6 +223,8 @@ Example:
         "tgpayment": {
             "show_balance": "Your balance: <b>{requests_left}</b> credits.",
             "tgbuy_title": "Balance replenishment",
+            "balance_button": "Balance",
+            "balance_text": "Your current balance: {amount} credits.",
             "tgbuy_desc": "10 credits to Korneslov",
             "tgbuy_price_label": "10 credits",
             "tgbuy_payment_successful": "Payment completed!! Balance refilled by {money_amount} credits.",
