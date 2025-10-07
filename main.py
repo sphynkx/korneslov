@@ -15,7 +15,8 @@ from menu.tgpayment_menu import payment_confirmation_keyboard, get_currency_keyb
 
 from i18n.messages import tr
 from texts.prompts import HELP_FORMAT
-from korneslov import is_valid_korneslov_query, fetch_full_korneslov_response
+
+from utils.methods.korneslov_ut import is_valid_korneslov_query, fetch_full_korneslov_response
 
 from utils.utils import split_message, parse_references
 from utils.userstate import get_user_state
@@ -30,7 +31,8 @@ from db.tgpayments import add_tgpayment, get_user_amount,  set_user_amount
 
 
 ##logging.basicConfig(level=logging.INFO)
-##logging.basicConfig(level=logging.DEBUG)
+##
+logging.basicConfig(level=logging.DEBUG)
 
 bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher()
