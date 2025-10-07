@@ -8,7 +8,7 @@ from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, LabeledPrice, CallbackQuery
 
-from config import TELEGRAM_BOT_TOKEN, TRIBUTE_REQUEST_PRICE, TRIBUTE_PAYMENT_URL, USE_TRIBUTE, TESTMODE, TGPAYMENT_PHOTO, TGPAYMENT_PROVIDERS
+from config import TELEGRAM_BOT_TOKEN, TGPAYMENT_PHOTO, TGPAYMENT_PROVIDERS
 
 from menu.base_menu import router, main_reply_keyboard, oplata_menu
 from menu.tgpayment_menu import payment_confirmation_keyboard, get_currency_keyboard
@@ -17,7 +17,6 @@ from i18n.messages import tr
 from texts.prompts import HELP_FORMAT
 from korneslov import is_valid_korneslov_query, fetch_full_korneslov_response
 
-##from utils.tribute import can_use, is_unlimited ## WILL DEPRECATED
 from utils.utils import split_message, parse_references
 from utils.userstate import get_user_state
 from utils.tgpayments import get_provider_by_currency, can_use, is_unlimited, reset_payment_state
@@ -27,7 +26,6 @@ from db.books import find_book_entry
 from db.users import upsert_user, get_user
 from db.requests import add_request, update_request_response
 from db.responses import add_response
-##from db.tribute import get_user_amount, set_user_amount ## WILL DEPRECATED
 from db.tgpayments import add_tgpayment, get_user_amount,  set_user_amount
 
 
@@ -44,17 +42,6 @@ dp.include_router(router)
 async def handle_pre_checkout(pre_checkout_query: types.PreCheckoutQuery):
     print("PRE_CHECKOUT:", pre_checkout_query.model_dump_json(indent=2))
     await pre_checkout_query.answer(ok=True)
-
-
-def pay_keyboard_for(uid: int) -> InlineKeyboardMarkup:
-    state = get_user_state(uid)
-    url = f"{TRIBUTE_PAYMENT_URL}&uid={uid}"   ## Send user_id to to payment service!!
-    kb = InlineKeyboardMarkup(
-        inline_keyboard=[
-            [InlineKeyboardButton(text=tr("tribute.pay_keyboard_for", lang=state['lang']), url=url)]
-        ]
-    )
-    return kb
 
 
 @dp.message(Command("start"))
@@ -80,8 +67,6 @@ async def cmd_start(message: types.Message):
     msg_text = tr("start.start_bot", lang=state['lang'])
     ## UI DBG
     msg_text += f"\n\n______________\nCurrent user_id: <code>{message.from_user.id}</code>\n<b>Current state:</b>\n<code>{json.dumps(state, ensure_ascii=False)}</code>"
-    if TESTMODE:
-        msg_text += tr("start.testmode_banner", lang=state['lang'])
     await message.answer(msg_text, reply_markup=main_reply_keyboard(), parse_mode="HTML")
 
 
@@ -287,11 +272,7 @@ async def handle_korneslov_query(message: types.Message, refs=None):
     price = TGPAYMENT_REQUEST_PRICES.get(level, 1)
     ## check for unlim
     if requests_left != -1 and requests_left < price:
-        kb = pay_keyboard_for(uid)
-        await message.answer(
-            tr("tribute.handle_korneslov_query_no_testmode_use_tribute", lang=state['lang']),
-            reply_markup=kb, parse_mode="HTML"
-        )
+        await message.answer(tr("tgpayment.low_amount", lang=state['lang']))
         return
 
     ## Logging user to DB (upsert)
@@ -366,7 +347,7 @@ async def handle_korneslov_query(message: types.Message, refs=None):
         logging.exception(e)
         ## Refresh status as error
         await update_request_response(req_id, status_oai=False, status_tg=False)
-        await message.answer(tr("tribute.handle_korneslov_query_exception", lang=state['lang']), parse_mode="HTML")
+        await message.answer(tr("handle_korneslov_query.handle_korneslov_query_exception", lang=state['lang']), parse_mode="HTML")
 
 
 async def main():

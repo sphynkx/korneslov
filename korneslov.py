@@ -1,6 +1,6 @@
 import re
 import logging
-from config import get_model_and_params, OPENAI_API_KEY, TESTMODE, USE_TRIBUTE
+from config import get_model_and_params, OPENAI_API_KEY
 from openai import AsyncOpenAI
 from utils.utils import is_truncated
 from texts.prompts import *
@@ -16,13 +16,14 @@ client = AsyncOpenAI(api_key=OPENAI_API_KEY)
 
 
 ##DUMMY_TEXT = True
-##
+## DEPRECATED??
 DUMMY_TEXT = False
 
 
 
 ## DUMMY then `DUMMY_TEXT = True`
-def dummy_openai_response(book, chapter, verse, test_banner="", followup=None, dummy_text=None):
+## Deprecated??
+def dummy_openai_response_2DEL(book, chapter, verse, test_banner="", followup=None, dummy_text=None):
     if dummy_text is None:
         dummy_text = "Dummy-text not found!!"
     if test_banner: dummy_text += test_banner

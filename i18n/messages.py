@@ -90,18 +90,6 @@ MESSAGES = {
             "back_to_main": "Назад в главное меню",
             "set_to_english": "Язык установлен: english"
         },
-        "tribute": {
-            "pay_keyboard_for": "Купить 10 запросов",
-            "testmode": "Тестовый режим: баланс не ограничен.",
-            "use_tribute": "Ваш баланс: <b>{requests_left}</b> запрос(ов).",
-            "no_use_tribute": "Тестовый режим: баланс не ограничен.",
-            "cmd_buy_testmode": "Тестовый режим: оплата отключена.",
-            "cmd_buy_use_tribute": "Выберите пакет. Оплата через Tribute.",
-            "cmd_buy_no_use_tribute": "Тестовый режим: оплата отключена.",
-            "handle_korneslov_query_no_testmode_use_tribute": "❌ У вас нет доступных запросов.\nПожалуйста, пополните баланс:", ## used twice
-            "handle_korneslov_query_testmode_no_use_tribute": "\n\n(Тестовый режим)",
-            "handle_korneslov_query_exception": "Произошла ошибка генерации. Повторите запрос позже.",
-        },
         "tgpayment": {
             "show_balance": "Ваш баланс: <b>{requests_left}</b> кредитов.",
             "tgbuy_title": "Пополнение баланса",
@@ -118,10 +106,12 @@ MESSAGES = {
             "wrong_amount": "Некорректная сумма, попробуйте еще раз.",
             "make_payment": "Произвести оплату",
             "back": "Назад",
+            "low_amount": "❌ У вас нет доступных запросов.\nПожалуйста, пополните баланс:", ## used twice
         },
         "handle_korneslov_query": {
             "query_format_error": "Неверный формат запроса. Пример: бытие 1 1-3,5",
             "book_not_found": "Книга «{book}» не найдена в базе. Проверьте правильность названия.",
+            "handle_korneslov_query_exception": "Произошла ошибка генерации. Повторите запрос позже.",
         },
         "korneslov_py": {
             "dummy_openai_response_return": "Корнеслов: {book} {chapter} {verse}\n<br>{dummy_text}",
@@ -208,18 +198,6 @@ Example:
             "back_to_main": "Back to main menu",
             "set_to_english": "Language set to: english"
         },
-        "tribute": {
-            "pay_keyboard_for": "Buy 10 requests",
-            "testmode": "Test mode: unlimited balance.",
-            "use_tribute": "Your balance: <b>{requests_left}</b> request(s).",
-            "no_use_tribute": "Test mode: unlimited balance.",
-            "cmd_buy_testmode": "Test mode: payment disabled.",
-            "cmd_buy_use_tribute": "Choose package. Payment via Tribute.",
-            "cmd_buy_no_use_tribute": "Test mode: unlimited balance.",
-            "handle_korneslov_query_no_testmode_use_tribute": "❌ You have not available requests.\nPlease recharge your balance:", ## used twice
-            "handle_korneslov_query_testmode_no_use_tribute": "\n\n(Test mode)",
-            "handle_korneslov_query_exception": "A generation error occurred. Please try again later.",
-        },
         "tgpayment": {
             "show_balance": "Your balance: <b>{requests_left}</b> credits.",
             "tgbuy_title": "Balance replenishment",
@@ -229,17 +207,19 @@ Example:
             "tgbuy_price_label": "10 credits",
             "tgbuy_payment_successful": "Payment completed!! Balance refilled by {money_amount} credits.",
             "tgbuy_payment_repeat": "This payment has already been processed.",
-            "choose_currency": "Choose currency for paymnet:",
+            "choose_currency": "Choose currency for payment:",
             "enter_amount": "Enter amount for payment in {currency}:",
             "pay_button": "Pay",
             "approve_amount": "Payment amount: {amount} {currency}\n\nChoose option:",
             "wrong_amount": "Incorrect value. Try again.",
             "make_payment": "Make a payment",
             "back": "Back",
+            "low_amount": "❌ You have not available requests.\nPlease recharge your balance:", ## used twice
         },
         "handle_korneslov_query": {
             "query_format_error": "Query format error. Example: genesis 1 1-3,5",
             "book_not_found": "The book «{book}» not found in DB. Please check book name.",
+            "handle_korneslov_query_exception": "A generation error occurred. Please try again later.",
         },
         "korneslov_py": {
             "dummy_openai_response_return": "Korneslov: {book} {chapter} {verse}\n{dummy_text}",

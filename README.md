@@ -1,45 +1,6 @@
-Here is small telegram bot that send requests to OpenAI engine to handle Bible poems with unique author's __Korneslov__ algorythm.
+Here is a Telegram bot designed for semantic/syntactic/analytical analysis of Old Testament texts using the author's original methodology __"Korneslov"__.
 
-
-
-# Nginx Configuration
-Suppose we have preconfigured DNS-records for subdomain `korneslov` as subdomain for `veda.wiki`.
-
-```
-dnf install nginx certbot python3-certbot-nginx
-```
-
-Create subdomain config for nginx `/etc/nginx/conf.d/korneslov.conf`:
-```
-server {
-    listen 80;
-    server_name korneslov.veda.wiki;
-
-    location / {
-        proxy_pass         http://127.0.0.1:8000;
-        proxy_set_header   Host $host;
-        proxy_set_header   X-Real-IP $remote_addr;
-        proxy_set_header   X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header   X-Forwarded-Proto $scheme;
-    }
-}
-```
-
-Restart nginx and check:
-```
-service nginx restart
-ping korneslov.veda.wiki
-```
-
-Get SSL-certificate for subdomain:
-```
-certbot --nginx -d korneslov.veda.wiki
-```
-Check from any external side:
-```
-curl -I https://korneslov.veda.wiki/
-```
-
+An admin panel has also been created for the bot. See [rootster repositoy](https://github.com/sphynkx/rootster) for details.
 
 
 # Install Process
@@ -89,11 +50,6 @@ service mysqld restart
 ```
 
 
-## Tribute Config
-Go to  [Tribute](https://tribute.tg/) - to Tribute Admin Console and set "Webhook URL" as https://korneslov.veda.wiki/tribute_webhook
-
-
-
 ## Bot Install
 In Telegram go to [@BotFather](https://t.me/BotFather), send command `/newbot`. Input something for bot name and username (username must ends on "Bot" or "_bot"). After that BotFather creates new token. Place this token to `.env` as `TELEGRAM_BOT_TOKEN` param.
 
@@ -102,22 +58,16 @@ Find recently created bot (search it in form @username_bot) and restart it. Then
 Also get API key for OpenAI and set it to `.env` as `OPENAI_API_KEY` param.
 
 
+## Payments config
+You need to register billing providers for bot. Go to [@BotFather](https://t.me/BotFather), run `/mybots`, choose your bot, next - press `Payments` button. You got the list of available providers. Configure some of them following provided recommendations and get provider's token. Then put token(s) into `config.py` to `TGPAYMENT_PROVIDERS` variable (`provider_token`). Set currency that will use with this provider (`currency`) - as currency code accordingly to ISO 4217. Also set country code (`country`) and provider name (`name`). Set exchange rate (`exchange_rate`): bot uses an internal payment value and you may configure your own course for requests payment. Basically you may choose some of currency as payment unit and recompute `exchange_rate` for all other providers as course to this base currency.
+
 
 # Run App
-Set `USE_TRIBUTE = False`.
-
 At first run manually:
 ```
 cd /opt/korneslov
 ./run.sh
 ```
-
-From separate console run:
-```
-./run-webhook.sh
-```
-No need to run it if `USE_TRIBUTE = False`. Only after tribute configuring.
-
 
 
 # Systems Configs
@@ -140,37 +90,17 @@ Environment=PYTHONUNBUFFERED=1
 [Install]
 WantedBy=multi-user.target
 ```
-Also `/etc/systemd/system/korneslov-webhook.service`:
-```
-[Unit]
-Description=Korneslov Tribute Webhook Flask Service
-After=network.target
 
-[Service]
-Type=simple
-WorkingDirectory=/opt/korneslov
-ExecStart=/bin/bash /opt/korneslov/run-webhook.sh
-Restart=always
-User=root
-Environment=PYTHONUNBUFFERED=1
-
-[Install]
-WantedBy=multi-user.target
-```
-Run them:
+Run it:
 ```
 systemctl daemon-reload
 systemctl enable korneslov-bot.service
-systemctl enable korneslov-webhook.service
 systemctl start korneslov-bot.service
-systemctl start korneslov-webhook.service
 ```
 Check:
 ```
 systemctl status korneslov-bot.service
-systemctl status korneslov-webhook.service
 journalctl -u korneslov-bot.service -f
-journalctl -u korneslov-webhook.service -f
 ```
 
 
@@ -219,8 +149,16 @@ If response is EXT_IP_OF_PROXY_SERVER then everything is OK.
 Set variable `ALL_PROXY` in the `.env` with proxy parameters.
 
 
+## Admin panel
+Optional but useful. Go to [rootster repositoy](https://github.com/sphynkx/rootster) and follow instructions. Set the same DB settings as for bot.
+
+
 # Usage
-Run bot in your Telegram client. If everything is OK you'll see keyboardwith buttons. Switch to necessary language, go to `Korneslov` menu, then the `Masoret` (for now the rest are not implemented). Next choose request level (`For fun`, `Details` or `Academic`). Type you request about some **Old Testament**'s book, chapter and verses in format like:
+Run bot in your Telegram client. If everything is OK you'll see keyboardwith buttons.
+
+**Note**: bot works only after the payment has been charged.
+
+Switch to necessary language, go to `Korneslov` menu, then the `Masoret` (for now the rest are not implemented). Next choose request level (`For fun`, `Details` or `Academic`). Type you request about some **Old Testament**'s book, chapter and verses in format like:
 ```
 genesis 1 1
 gen 1 2
