@@ -1,6 +1,6 @@
 Here is a Telegram bot designed for semantic/syntactic/analytical analysis of Old Testament texts using the author's original methodology __"Korneslov"__.
 
-An admin panel has also been created for the bot. See [rootster repositoy](https://github.com/sphynkx/rootster) for details.
+An admin panel has also been created for the bot. See [rootster repository](https://github.com/sphynkx/rootster) for details.
 
 
 # Install Process
@@ -144,13 +144,13 @@ Return to server with application, check connection:
 ```
 curl -x socks5h://proxyuser:********@EXT_IP_OF_PROXY_SERVER:1080 https://api.ipify.org
 ```
-If response is EXT_IP_OF_PROXY_SERVER then everything is OK.
+If response is same as `EXT_IP_OF_PROXY_SERVER` then everything is OK.
 
 Set variable `ALL_PROXY` in the `.env` with proxy parameters.
 
 
 ## Admin panel
-Optional but useful. Go to [rootster repositoy](https://github.com/sphynkx/rootster) and follow instructions. Set the same DB settings as for bot.
+Optional but useful. Go to [rootster repository](https://github.com/sphynkx/rootster) and follow instructions. Set the same DB settings as for bot.
 
 
 # Usage
