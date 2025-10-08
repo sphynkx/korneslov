@@ -8,8 +8,8 @@ from i18n.messages import tr
 from utils.userstate import get_user_state
 from utils.tgpayments import get_provider_by_currency, reset_payment_state
 from db.tgpayments import add_tgpayment, get_user_amount, set_user_amount
-from menu.base_menu import oplata_menu, main_reply_keyboard
-from menu.tgpayment_menu import payment_confirmation_keyboard, get_currency_keyboard
+from menus.tgpayment_menu import oplata_menu, get_currency_keyboard, payment_confirmation_keyboard
+from menus.main_menu import main_reply_keyboard
 from config import TGPAYMENT_PHOTO
 
 

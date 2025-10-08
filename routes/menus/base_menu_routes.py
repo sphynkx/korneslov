@@ -5,14 +5,12 @@ from aiogram import Router, types
 from i18n.messages import tr
 from utils.userstate import get_user_state
 from utils.utils import get_statistics_text
-from menu.base_menu import (
-    main_reply_keyboard,
-    korneslov_menu,
-    masoret_menu,
-    rishi_menu,
-    oplata_menu,
-    language_menu,
-)
+from menus.main_menu import main_reply_keyboard
+from menus.methods_menu import korneslov_menu
+from menus.masoret_menu import masoret_menu
+from menus.rishi_menu import rishi_menu
+from menus.tgpayment_menu import oplata_menu
+from menus.language_menu import language_menu  # kept for completeness if used
 
 router = Router()
 

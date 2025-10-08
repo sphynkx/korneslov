@@ -4,7 +4,7 @@ from aiogram import Router, types
 from aiogram.filters import Command
 
 from i18n.messages import tr
-from menu.base_menu import main_reply_keyboard
+from menus.main_menu import main_reply_keyboard
 from utils.userstate import get_user_state
 from db.users import upsert_user
 
