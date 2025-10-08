@@ -54,7 +54,6 @@ CREATE TABLE IF NOT EXISTS responses (
     FOREIGN KEY (request_id) REFERENCES requests(id) ON DELETE CASCADE
 );
 
-
 -- Telegram Bot Payment
 CREATE TABLE IF NOT EXISTS tgpayments (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -67,7 +66,8 @@ CREATE TABLE IF NOT EXISTS tgpayments (
     telegram_payment_charge_id VARCHAR(128),
     datetime DATETIME NOT NULL,
     raw_json TEXT,
-    UNIQUE KEY (invoice_id)
+    UNIQUE KEY uniq_provider_payment_charge_id (provider_payment_charge_id),
+    UNIQUE KEY uniq_telegram_payment_charge_id (telegram_payment_charge_id)
 );
 
 -- Admin users for admin panel
