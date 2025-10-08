@@ -107,7 +107,7 @@ async def parse_references(text, lang="ru", hits=False):
     If cannot parse - returns empty list.
     Support for book names with numbers and spaces.
     Note: parse_references() calls in 2 places:
-    * at as filter in `main.py` (handle_korneslov_query() ) hit is False - do not increment
+    * at as filter in `routes/methodes/korneslov_mtd.py` (handle_korneslov_query() ) hit is False - do not increment - DEPRECATED!!
     * at is_valid_korneslov_query() with `hits=True` param, and increments the `hits`
     It was bugfix for duplicated incrementions.
     """

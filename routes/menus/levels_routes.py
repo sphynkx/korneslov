@@ -22,3 +22,4 @@ async def handle_level_choice(msg: types.Message):
         f"{tr('masoret_menu.level_set', msg=msg)}: {msg.text}\n\n______________\nCurrent state:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         parse_mode="HTML"
     )
+

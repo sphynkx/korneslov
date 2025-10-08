@@ -13,3 +13,4 @@ router = Router()
 async def echo(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     await msg.answer(f"{tr('handle_korneslov_query.query_format_error', msg=msg)}\n\n<code>{json.dumps(state, ensure_ascii=False)}</code>")
+

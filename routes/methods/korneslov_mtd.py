@@ -22,7 +22,6 @@ router = Router()
 
 
 @router.message(is_valid_korneslov_query)
-####async def handle_korneslov_query(message: types.Message):
 async def handle_korneslov_query(message: types.Message, refs=None):
     text = message.text or ""
     uid = message.from_user.id
@@ -112,3 +111,4 @@ async def handle_korneslov_query(message: types.Message, refs=None):
         ## Refresh status as error
         await update_request_response(req_id, status_oai=False, status_tg=False)
         await message.answer(tr("handle_korneslov_query.handle_korneslov_query_exception", lang=state['lang']), parse_mode="HTML")
+

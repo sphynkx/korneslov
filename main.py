@@ -26,12 +26,12 @@ from routes.menus.echo_routes import router as menu_echo_router
 bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher()
 
-## IMPORTANT: routers include order
-## 1) commands_router — command handlers like /start
-## 2) payments_router — intercept amount inputs before generic text handlers
-## 3) methods_router — parse biblical refs like "genesis 1 1"
-## 4) menu_* routers — menus and other generic handlers
-## 5) menu_echo_router — must be last
+## IMPORTANT: routers must include in the strait order:
+## 1. commands_router — command handlers like /start
+## 2. payments_router — intercept amount inputs before generic text handlers
+## 3. methods_router — parse biblical refs like "genesis 1 1"
+## 4. menu_* routers — menus and other generic handlers
+## 5. menu_echo_router — must be last
 dp.include_router(commands_router)
 dp.include_router(payments_router)
 dp.include_router(methods_router)

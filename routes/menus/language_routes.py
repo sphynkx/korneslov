@@ -34,3 +34,4 @@ async def handle_language_english(msg: types.Message):
         f"{tr('language_menu.set_to_english', msg=msg)}\n\n______________\nCurrent state:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
         parse_mode="HTML"
     )
+

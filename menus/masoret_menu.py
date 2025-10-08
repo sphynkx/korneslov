@@ -14,3 +14,4 @@ def masoret_menu(msg=None):
         ]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+

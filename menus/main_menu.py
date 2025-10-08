@@ -20,3 +20,4 @@ def main_reply_keyboard(msg=None):
         ]
     ]
     return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+

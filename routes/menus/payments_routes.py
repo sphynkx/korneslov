@@ -16,3 +16,4 @@ async def handle_oplata(msg: types.Message):
 @router.message(lambda m: m.text == tr("oplata_menu.back_to_main", msg=m))
 async def handle_back_to_main_from_oplata(msg: types.Message):
     await msg.answer(tr("main_menu.title", msg=msg), reply_markup=main_reply_keyboard(msg=msg))
+

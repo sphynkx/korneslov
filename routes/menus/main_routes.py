@@ -16,3 +16,4 @@ async def handle_back_to_main(msg: types.Message):
 @router.message(lambda m: m.text == tr("masoret_menu.back_to_korneslov", msg=m) or m.text == tr("rishi_menu.back_to_korneslov", msg=m))
 async def handle_back_to_korneslov(msg: types.Message):
     await msg.answer(tr("korneslov_menu.title", msg=msg), reply_markup=korneslov_menu(msg=msg))
+

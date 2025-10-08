@@ -22,3 +22,4 @@ Current state:
 <code>{json.dumps(state, ensure_ascii=False)}</code>""",
         reply_markup=masoret_menu(msg=msg), parse_mode="HTML"
     )
+
