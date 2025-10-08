@@ -7,7 +7,7 @@ from config import TELEGRAM_BOT_TOKEN
 from routes.commands.commands import router as commands_router
 from routes.payments import router as payments_router
 from routes.methods.korneslov_mtd import router as methods_router
-from menu.base_menu import router as base_router
+from routes.menus.base_menu_routes import router as base_router
 
 
 ##logging.basicConfig(level=logging.INFO)
