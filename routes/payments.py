@@ -181,5 +181,5 @@ async def handle_successful_payment(message: types.Message):
     )
     await message.answer(
         tr("main_menu.welcome", lang=state['lang']),
-        reply_markup=main_reply_keyboard(msg=message, lang=state['lang'])
+        reply_markup=main_reply_keyboard(msg=message)
     )
