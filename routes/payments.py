@@ -143,6 +143,19 @@ async def handle_tgpay_back2(callback: CallbackQuery):
     await callback.answer()
 
 
+## Back button for Payment+Balance message
+@router.callback_query(lambda c: c.data == "tgpay_main_back")
+async def handle_tgpay_main_back(callback: CallbackQuery):
+    state = get_user_state(callback.from_user.id)
+    lang = state.get("lang", "ru")
+    reset_payment_state(state)
+    await callback.message.answer(
+        tr("main_menu.title", lang=lang),
+        reply_markup=main_reply_keyboard(msg=callback.message)
+    )
+    await callback.answer()
+
+
 @router.message(lambda message: message.successful_payment is not None)
 async def handle_successful_payment(message: types.Message):
     state = get_user_state(message.from_user.id)

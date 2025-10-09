@@ -28,6 +28,7 @@ def oplata_menu(msg=None, lang="ru"):
     if msg is not None:
         lang = get_user_state(msg.from_user.id).get("lang", lang)
     return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text=tr("tgpayment.back", lang=lang), callback_data="tgpay_main_back")],
         [InlineKeyboardButton(text=tr("tgpayment.pay_button", lang=lang), callback_data="tgpay_pay")],
         [InlineKeyboardButton(text=tr("tgpayment.balance_button", lang=lang), callback_data="tgpay_balance")],
     ])
