@@ -128,6 +128,21 @@ async def handle_tgpay_back(callback: CallbackQuery):
     await callback.answer()
 
 
+## Back button for currencies list
+@router.callback_query(lambda c: c.data == "tgpay_back2")
+async def handle_tgpay_back2(callback: CallbackQuery):
+    state = get_user_state(callback.from_user.id)
+    lang = state.get("lang", "ru")
+    ## Flush amount if was entered
+    state.pop("await_amount", None)
+    state.pop("amount", None)
+    await callback.message.answer(
+        tr("oplata_menu.prompt", lang=lang),
+        reply_markup=oplata_menu(lang=lang)
+    )
+    await callback.answer()
+
+
 @router.message(lambda message: message.successful_payment is not None)
 async def handle_successful_payment(message: types.Message):
     state = get_user_state(message.from_user.id)

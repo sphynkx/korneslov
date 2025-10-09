@@ -13,14 +13,15 @@ def payment_confirmation_keyboard(lang="ru"):
 
 def get_currency_keyboard(lang="ru"):
     ## Gather all uniq currencies
-    currencies = list({p["currency"] for p in TGPAYMENT_PROVIDERS})
-    keyboard = []
+    currencies = sorted({p["currency"] for p in TGPAYMENT_PROVIDERS})
+    rows = []
+    rows.append([InlineKeyboardButton(text=tr("tgpayment.back", lang=lang), callback_data="tgpay_back2")])
     for cur in currencies:
-        keyboard.append([InlineKeyboardButton(
-            text=f"{cur}",  ## Here could set translation or symbol for currency
+        rows.append([InlineKeyboardButton(
+            text=f"{cur}",
             callback_data=f"tgpay_currency_{cur}"
         )])
-    return InlineKeyboardMarkup(inline_keyboard=keyboard)
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def oplata_menu(msg=None, lang="ru"):
