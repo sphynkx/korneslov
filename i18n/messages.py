@@ -9,11 +9,10 @@ MESSAGES = {
 
 Для оплаты нажмите кнопку "Оплата".
 
-Оплата производится посредством покупки "корешков" - условных единиц работы бота.
-
-<b>Прайс:</b>
-1 корешок - 10 руб.
-Рекомендуемый минимум - 3 корешка.
+Прайс:
+Минимальный запрос - 10 руб.
+Подробный запрос - 20 руб.
+Расширенный запрос - 30 руб.
             """,
             "testmode_banner": "\n\n<b>Тестовый режим: оплата и баланс отключены.</b>",
         },
@@ -30,7 +29,7 @@ MESSAGES = {
             "help": "Справка",
             "title": "Главное меню",
             "help_text": """<b>Запросы:</b>
-Предусмотрено 3 уровня сложности запросов: базовый, подробный и академичный. Для выбора уровня нажмите на кнопку "Кронеслов", затем на "Масорет" и потом на одну из кнопок "Базовый", "Подробнее" или "Академичный". 
+Предусмотрено 3 уровня сложности запросов: базовый, подробный и академичный. Для выбора уровня нажмите на кнопку "Корнеслов", затем на "Масорет" и потом на одну из кнопок "Базовый", "Подробнее" или "Академичный". 
 
 <b>Важно:</b>
 • Разные уровни сложности запросов имеют различную стоимость. 
@@ -49,7 +48,7 @@ MESSAGES = {
 <i>бытие 1 2,3</i>
 <i>бытие 1 4,6-8,10-12,14</i>
 
-Иногда вместо полезного ответа бот может выдать ошибку. В этом случае плата не взымается. Просто повторите запрос.
+Иногда вместо полезного ответа бот может выдать ошибку. В этом случае плата не взимается. Просто повторите запрос.
                 """,
             "unknown_command": "ERRORA!!"
         },
@@ -151,7 +150,17 @@ MESSAGES = {
 
     "en": {
         "start": {
-            "start_bot": "StartBot message",
+            "start_bot": """<b>Korneslov</b> is a Telegram bot for comprehensive linguistic analysis of Old Testament texts using the author's original methodology.
+
+For details on how to use it, see the "Help" section.
+
+To pay, click the "Pay" button.
+
+Price:
+Minimum request - 0.1 EUR.
+Detailed request - 0.2 EUR.
+Advanced request - 0.3 EUR.
+            """,
             "testmode_banner": "\n\n<b>Test mode: payment and balance are disabled.</b>",
             },
         "main_menu": {
@@ -165,7 +174,27 @@ MESSAGES = {
             "stats": "Statistics",
             "help": "Help",
             "title": "Main menu",
-            "help_text": "This is the help for the bot. Here you will find information about its features and usage."
+            "help_text": """<b>Queries:</b>
+There are 3 levels of query difficulty: Basic, Detailed, and Academic. To select a level, click the "Korneslov" button, then "Masoret," and then one of the buttons: "Basic," "Detailed," or "Academic."
+
+<b>Important:</b>
+• Different query difficulty levels have different costs.
+• Queries are priced in "koreshoks"—the bot's internal currency. Rates:
+• "Basic" - 1 koreshok
+• "Detailed" - 2 koreshoks
+• "Academic" - 3 koreshoks
+• The bot is quite slow. Therefore, after sending a query, please wait a few minutes; do not try to send it again.
+
+<b>Usage:</b>
+Select available options from the menu below. If the menu is not visible, click the square with dots icon in the lower right corner. To parse the text, click the "Root Book" button and select the desired options from the submenu. Then send a request in the following format:
+<b>book chapter verse</b>
+For example:
+<i>Genesis 1:1</i>
+<i>Genesis 1:2,3</i>
+<i>Genesis 1:4,6-8,10-12,14</i>
+
+Sometimes, instead of a useful answer, the bot may return an error. In this case, no fee is charged. Simply repeat the request.
+            """
         },
         "korneslov_menu": {
             "masoret": "Masoret",
