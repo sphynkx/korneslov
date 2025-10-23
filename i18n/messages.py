@@ -3,19 +3,17 @@ from utils.userstate import get_user_state
 MESSAGES = {
     "ru": {
         "start": {
-            "start_bot": """Привет! Я бот метода <b>«Корнеслов»</b>.
-Выберите доступные опции в меню ниже. Если меню не отображено, нажмите на значок квадрата с точками справа внизу.
-Для разбора текста нажмите на кнопку "Корнеслов" и выберите нужные опции в его подменю. Затем отправьте запрос в формате:
+            "start_bot": """<b>"Корнеслов"</b> - это телеграм-бот для комплексного лингвинистического анализа текстов Ветхого завета по оригинальной авторской методике.
 
-<b>книга глава стих</b>
+Подробности работы и использования - см. раздел "Помощь".
 
-Напр.: 
-<i>бытие 1 1</i>
-<i>бытие 1 2,3</i>
-<i>бытие 1 4,6-8,10-12,14</i>
+Для оплаты нажмите кнопку "Оплата".
 
-Баланс: /balance
-Купить пакеты: /buy
+Оплата производится посредством покупки "корешков" - условных единиц работы бота.
+
+<b>Прайс:</b>
+1 корешок - 10 руб.
+Рекомендуемый минимум - 3 корешка.
             """,
             "testmode_banner": "\n\n<b>Тестовый режим: оплата и баланс отключены.</b>",
         },
@@ -31,7 +29,28 @@ MESSAGES = {
             "stats": "Статистика",
             "help": "Справка",
             "title": "Главное меню",
-            "help_text": "Это справка по использованию бота. Здесь вы найдете информацию о функциях и возможностях.",
+            "help_text": """<b>Запросы:</b>
+Предусмотрено 3 уровня сложности запросов: базовый, подробный и академичный. Для выбора уровня нажмите на кнопку "Кронеслов", затем на "Масорет" и потом на одну из кнопок "Базовый", "Подробнее" или "Академичный". 
+
+<b>Важно:</b>
+• Разные уровни сложности запросов имеют различную стоимость. 
+• Стоимость запросов выражена в "корешках" - внутренней "валюте" бота. Расценки:
+  • "Базовый" - 1 корешок
+  • "Подробнее" - 2 корешка
+  • "Академичный" - 3 корешка
+• Бот работает достаточно медленно. Поэтому отправив запрос - подождите несколько минут, не пытайтесь отправлять запрос заново.
+
+<b>Использование:</b>
+Выберите доступные опции в меню ниже. Если меню не отображено, нажмите на значок квадрата с точками справа внизу.
+Для разбора текста нажмите на кнопку "Корнеслов" и выберите нужные опции в его подменю. Затем отправьте запрос в формате:
+<b>книга глава стих</b>
+Напр.: 
+<i>бытие 1 1</i>
+<i>бытие 1 2,3</i>
+<i>бытие 1 4,6-8,10-12,14</i>
+
+Иногда вместо полезного ответа бот может выдать ошибку. В этом случае плата не взымается. Просто повторите запрос.
+                """,
             "unknown_command": "ERRORA!!"
         },
         "korneslov_menu": {
@@ -47,7 +66,7 @@ MESSAGES = {
 """
         },
         "masoret_menu": {
-            "light": "Поугарать",
+            "light": "Базовый",
             "smart": "Подробнее",
             "hard": "Академично",
             "back_to_korneslov": "Назад к Корнеслову",
@@ -59,7 +78,7 @@ MESSAGES = {
 — <b>Часть 3 — Цепочки базовых значений</b>
 
 Та или иная совокупность частей выводится в зависимости от выбранного уровня сложности. Доступны следующие уровни:
-• <b>Поугарать</b> - Простой разбор. Выводятся части 0 и 3.
+• <b>Базовый</b> - Простой разбор. Выводятся части 0 и 3.
 • <b>Подробнее</b> - Более сложный разбор. Выводятся части 0, 2 и 3.
 • <b>Академично</b> - Максимально глубокий и основательный разбор. Выводятся все части - 0, 1, 2 и 3.
 
@@ -75,7 +94,7 @@ MESSAGES = {
             "level_set": "Установлен уровень"
         },
         "rishi_menu": {
-            "light": "Поугарать",
+            "light": "Базовый",
             "smart": "Подробнее",
             "hard": "Академично",
             "back_to_korneslov": "Назад к Корнеслову",
@@ -91,13 +110,13 @@ MESSAGES = {
             "set_to_english": "Язык установлен: english"
         },
         "tgpayment": {
-            "show_balance": "Ваш баланс: <b>{requests_left}</b> кредитов.",
+            "show_balance": "Ваш баланс: <b>{requests_left}</b> корешков.",
             "tgbuy_title": "Пополнение баланса",
             "balance_button": "Баланс",
-            "balance_text": "Ваш текущий баланс: {amount} кредитов.",
-            "tgbuy_desc": "10 кредитов к Корнеслову",
-            "tgbuy_price_label": "10 кредитов",
-            "tgbuy_payment_successful": "Оплата прошла!! Баланс пополнен на {money_amount} кредитов.",
+            "balance_text": "Ваш текущий баланс: {amount} кредитов.",## todo - rework to real money and currencies
+            "tgbuy_desc": "Покупка \"корешков\" к Корнеслову",
+            "tgbuy_price_label": "10 кредитов",## where is??
+            "tgbuy_payment_successful": "Оплата прошла!! Баланс пополнен на {money_amount} кредитов.",## todo - rework to real money and currencies (???)
             "tgbuy_payment_repeat": "Этот платеж уже был обработан ранее.",
             "choose_currency": "Выберите валюту для оплаты:",
             "enter_amount": "Введите сумму оплаты в {currency}:",
@@ -199,13 +218,13 @@ Example:
             "set_to_english": "Language set to: english"
         },
         "tgpayment": {
-            "show_balance": "Your balance: <b>{requests_left}</b> credits.",
+            "show_balance": "Your balance: <b>{requests_left}</b> koreshoks.",
             "tgbuy_title": "Balance replenishment",
             "balance_button": "Balance",
-            "balance_text": "Your current balance: {amount} credits.",
-            "tgbuy_desc": "10 credits to Korneslov",
-            "tgbuy_price_label": "10 credits",
-            "tgbuy_payment_successful": "Payment completed!! Balance refilled by {money_amount} credits.",
+            "balance_text": "Your current balance: {amount} credits.",## todo - rework to real money and currencies
+            "tgbuy_desc": "Buy koreshoks to Korneslov",
+            "tgbuy_price_label": "10 credits",## where is??
+            "tgbuy_payment_successful": "Payment completed!! Balance refilled by {money_amount} credits.",## todo - rework to real money and currencies (???)
             "tgbuy_payment_repeat": "This payment has already been processed.",
             "choose_currency": "Choose currency for payment:",
             "enter_amount": "Enter amount for payment in {currency}:",
