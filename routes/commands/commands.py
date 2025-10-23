@@ -33,6 +33,4 @@ async def cmd_start(message: types.Message):
     )
 
     msg_text = tr("start.start_bot", lang=state['lang'])
-    ## UI DBG
-    msg_text += f"\n\n______________\nCurrent user_id: <code>{message.from_user.id}</code>\n<b>Current state:</b>\n<code>{json.dumps(state, ensure_ascii=False)}</code>"
     await message.answer(msg_text, reply_markup=main_reply_keyboard(), parse_mode="HTML")

@@ -1,11 +1,13 @@
 import re
+import json
 from db.books import find_book_by_name_or_synonym, increment_book_hits
 
 
 
 ## Dummy for Statistika button
-def get_statistics_text() -> str:
-    return "STATISTIKA."
+def get_statistics_text(state, id) -> str:
+    return f"Statistics:\n______________\nCurrent user_id: <code>{id}</code>\n<b>Current state:</b>\n<code>{json.dumps(state, ensure_ascii=False)}</code>"
+
 
 
 ## Improved heuristics - tracks allowed pair tags, count all tags using dict. In case of unclosed tag force set close tag at the end of part, and force set open tag at the beginning of the next part. No errors were observed.

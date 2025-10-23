@@ -18,11 +18,7 @@ async def handle_korneslov(msg: types.Message):
     ##state["direction"] = None
     ##state["level"] = None
     await msg.answer(
-        f"""{tr("korneslov_menu.prompt", msg=msg)}
-
-______________
-Current state:
-<code>{json.dumps(state, ensure_ascii=False)}</code>""",
+        tr("korneslov_menu.prompt", msg=msg),
         reply_markup=korneslov_menu(msg=msg), parse_mode="HTML"
     )
 

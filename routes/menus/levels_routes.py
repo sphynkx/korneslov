@@ -19,7 +19,7 @@ async def handle_level_choice(msg: types.Message):
     }
     state["level"] = level_map.get(msg.text, "hard")
     await msg.answer(
-        f"{tr('masoret_menu.level_set', msg=msg)}: {msg.text}\n\n______________\nCurrent state:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
+        f"{tr('masoret_menu.level_set', msg=msg)}: {msg.text}",
         parse_mode="HTML"
     )
 

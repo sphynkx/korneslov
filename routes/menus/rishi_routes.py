@@ -15,7 +15,7 @@ async def handle_rishi(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     state["direction"] = "rishi"
     await msg.answer(
-        f"{tr('rishi_menu.prompt', msg=msg)}\n\n______________\nCurrent state:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
+        tr('rishi_menu.prompt', msg=msg),
         reply_markup=rishi_menu(msg=msg), parse_mode="HTML"
     )
 

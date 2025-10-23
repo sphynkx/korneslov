@@ -15,11 +15,7 @@ async def handle_masoret(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     state["direction"] = "masoret"
     await msg.answer(
-        f"""{tr("masoret_menu.prompt", msg=msg)}
-
-______________
-Current state:
-<code>{json.dumps(state, ensure_ascii=False)}</code>""",
+        tr("masoret_menu.prompt", msg=msg),
         reply_markup=masoret_menu(msg=msg), parse_mode="HTML"
     )
 

@@ -31,7 +31,7 @@ async def handle_language_english(msg: types.Message):
     state = get_user_state(msg.from_user.id)
     state["lang"] = "en"
     await msg.answer(
-        f"{tr('language_menu.set_to_english', msg=msg)}\n\n______________\nCurrent state:\n<code>{json.dumps(state, ensure_ascii=False)}</code>",
+        tr('language_menu.set_to_english', msg=msg),
         parse_mode="HTML"
     )
 
