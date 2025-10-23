@@ -4,6 +4,8 @@ from aiogram import Bot, Dispatcher
 
 from config import TELEGRAM_BOT_TOKEN
 
+from routes.errors import router as errors_router
+
 from routes.commands.commands import router as commands_router
 from routes.payments import router as payments_router
 from routes.methods.korneslov_mtd import router as methods_router
@@ -25,6 +27,10 @@ from routes.menus.echo_routes import router as menu_echo_router
 
 bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher()
+
+## IMPORTANT:
+## 0. Global error-router must be connected first - before any other routes!!
+dp.include_router(errors_router)
 
 ## IMPORTANT: routers must include in the strait order:
 ## 1. commands_router — command handlers like /start

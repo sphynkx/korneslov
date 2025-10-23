@@ -1,6 +1,7 @@
 import json
 from datetime import datetime, date
 
+from aiogram import exceptions ## BEFORE other aiogram imports!!
 from aiogram import Router, types
 from aiogram.types import CallbackQuery, LabeledPrice
 
@@ -11,7 +12,7 @@ from db.tgpayments import add_tgpayment, get_user_amount, set_user_amount
 from menus.tgpayment_menu import oplata_menu, get_currency_keyboard, payment_confirmation_keyboard
 from menus.main_menu import main_reply_keyboard
 from config import TGPAYMENT_PHOTO
-
+import logging
 
 router = Router()
 
@@ -41,18 +42,46 @@ async def handle_tgpay_confirm(callback: CallbackQuery):
 
     invoice_amount = int(amount) * 100
 
-    await callback.message.bot.send_invoice(
-        chat_id=callback.message.chat.id,
-        title=tr("tgpayment.tgbuy_title", lang=state["lang"]),
-        description=tr("tgpayment.tgbuy_desc", lang=state["lang"]),
-        payload="balance_custom",
-        provider_token=provider["provider_token"],
-        currency=currency,
-        prices=[LabeledPrice(label=tr("tgpayment.tgbuy_price_label", lang=state["lang"]), amount=invoice_amount)],
-        start_parameter="buy_balance",
-        photo_url=TGPAYMENT_PHOTO
-    )
-    await callback.answer()
+    try:
+        await callback.message.bot.send_invoice(
+            chat_id=callback.message.chat.id,
+            title=tr("tgpayment.tgbuy_title", lang=state["lang"]),
+            description=tr("tgpayment.tgbuy_desc", lang=state["lang"]),
+            payload="balance_custom",
+            provider_token=provider["provider_token"],
+            currency=currency,
+            prices=[LabeledPrice(label=tr("tgpayment.tgbuy_price_label", lang=state["lang"]), amount=invoice_amount)],
+            start_parameter="buy_balance",
+            photo_url=TGPAYMENT_PHOTO
+        )
+    except exceptions.TelegramBadRequest as e:
+        ## Log details and handle PAYMENT_PROVIDER_INVALID correctly and specifically
+        logging.exception("send_invoice failed: %s", e)
+        ## Flush payment state and inform user
+        reset_payment_state(state)
+        if "PAYMENT_PROVIDER_INVALID" in str(e):
+            await callback.message.answer(tr("tgpayment.provider_invalid", lang=state.get("lang", "ru"), currency=currency))
+            try:
+                await callback.answer()
+            except Exception:
+                ## ignore callback answer errors
+                pass
+            return
+        else:
+            # Common error of invoice send- return user to payment menu
+            await callback.message.answer(tr("tgpayment.invoice_send_failed", lang=state.get("lang", "ru")))
+            try:
+                await callback.answer()
+            except Exception:
+                pass
+            return
+
+    ## Invoice sent succesfully - answer user on callback
+    try:
+        await callback.answer()
+    except Exception:
+        ## Ignore callback.answer error
+        pass
 
 
 @router.message(lambda m: get_user_state(m.from_user.id).get("await_amount") is True and m.text and m.text.isdigit())

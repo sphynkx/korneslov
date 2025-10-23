@@ -126,6 +126,7 @@ MESSAGES = {
             "make_payment": "Произвести оплату",
             "back": "Назад",
             "low_amount": "❌ У вас нет доступных запросов.\nПожалуйста, пополните баланс:", ## used twice
+            "provider_invalid": "Выбранная валюта не поддерживается провайдером оплаты. Пожалуйста, выберите другую валюту или попробуйте позже.",
         },
         "handle_korneslov_query": {
             "query_format_error": "Неверный формат запроса. Пример: бытие 1 1-3,5",
@@ -138,6 +139,11 @@ MESSAGES = {
             "ask_openai_return": "Корнеслов", ## inserted into f-string
             "ask_openai_exception_logging": "Ошибка при обращении к OpenAI",
             "ask_openai_exception_return": "Корнеслов: {book} {chapter} {verse}\n(Ошибка обращения к ChatGPT. Попробуйте позже.)",
+        },
+        "errors": {
+            "db_unavailable": "Временные проблемы с базой данных. Пожалуйста, повторите попытку позже.",
+            "message_parse_failed": "Ошибка при форматировании сообщения, отправляю упрощенный текст.",
+            "unexpected": "Произошла внутренняя ошибка. Мы уже в курсе.",
         },
     },
 
@@ -234,6 +240,7 @@ Example:
             "make_payment": "Make a payment",
             "back": "Back",
             "low_amount": "❌ You have not available requests.\nPlease recharge your balance:", ## used twice
+            "provider_invalid": "The selected currency is not supported by the payment provider. Please select a different currency or try again later.",
         },
         "handle_korneslov_query": {
             "query_format_error": "Query format error. Example: genesis 1 1-3,5",
@@ -246,6 +253,11 @@ Example:
             "ask_openai_return": "Korneslov", ## inserted into f-string
             "ask_openai_exception_logging": "OpenAI request failed",
             "ask_openai_exception_return": "Korneslov: {book} {chapter} {verse}\n(Error during request to ChatGPT. Try later.)",
+        },
+        "errors": {
+            "db_unavailable": "There are temporary problems with the database. Please try again later..",
+            "message_parse_failed": "There was an error formatting the message. I'm sending a simplified text.",
+            "unexpected": "An internal error occurred. We're already aware of it.",
         },
     }
 }

@@ -5,6 +5,7 @@ from itertools import groupby
 from aiogram import Router, types
 
 from config import TGPAYMENT_REQUEST_PRICES
+from utils.safe_send import answer_safe_message
 from i18n.messages import tr
 from utils.methods.korneslov_ut import is_valid_korneslov_query, fetch_full_korneslov_response
 from utils.utils import split_message
@@ -86,29 +87,32 @@ async def handle_korneslov_query(message: types.Message, refs=None):
         verses_str = group_ranges(verses)
 
     try:
-        ## Response generation via Korneslov
-        answer = await fetch_full_korneslov_response(
-            book, chapter, verses_str, uid, level=level
+        await callback.message.bot.send_invoice(
+            chat_id=callback.message.chat.id,
+            title=tr("tgpayment.tgbuy_title", lang=state["lang"]),
+            description=tr("tgpayment.tgbuy_desc", lang=state["lang"]),
+            payload="balance_custom",
+            provider_token=provider["provider_token"],
+            currency=currency,
+            prices=[LabeledPrice(label=tr("tgpayment.tgbuy_price_label", lang=state["lang"]), amount=invoice_amount)],
+            start_parameter="buy_balance",
+            photo_url=TGPAYMENT_PHOTO
         )
-        for part in split_message(answer):
-            part = re.sub(r'<br.*?>', '', part)
-            await message.answer(part, parse_mode="HTML")
-            await asyncio.sleep(2)
-        ## Save response in `responses`
-        await add_response(req_id, answer)
-        ## Refresh status as successful
-        await update_request_response(req_id, status_oai=True, status_tg=True)
-
-        ## Decrement credits if not unlim and if success
-        requests_left = await get_user_amount(uid)
-        if requests_left != -1 and requests_left >= price:
-            updated = await set_user_amount(uid, -price, str(req_id))
-            print(f"DBG: New user balance for user {uid} — {requests_left - price}")
-
-    except Exception as e:
+    except exceptions.TelegramBadRequest as e:
+        ## Log and answer to user, prevent bot to fall
         import logging
-        logging.exception(e)
-        ## Refresh status as error
-        await update_request_response(req_id, status_oai=False, status_tg=False)
-        await message.answer(tr("handle_korneslov_query.handle_korneslov_query_exception", lang=state['lang']), parse_mode="HTML")
+        logging.exception("send_invoice failed: %s", e)
+        if "PAYMENT_PROVIDER_INVALID" in str(e):
+            ## Provider doesnt support this currency
+            reset_payment_state(state)
+            await callback.message.answer(tr("tgpayment.provider_invalid", lang=state.get("lang", "ru"), currency=currency))
+            await callback.answer()
+            return
+        else:
+            ## Common error of invoice sending
+            await callback.message.answer(tr("tgpayment.invoice_send_failed", lang=state.get("lang", "ru")))
+            await callback.answer()
+            return
 
+    ## Everything is ok
+    await callback.answer()
