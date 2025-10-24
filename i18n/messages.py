@@ -109,12 +109,12 @@ MESSAGES = {
             "set_to_english": "Язык установлен: english"
         },
         "tgpayment": {
-            "show_balance": "Ваш баланс: <b>{requests_left}</b> корешков.",
+            "show_balance": "Ваш баланс: <b>{requests_left}</b> Корешков.",
             "tgbuy_title": "Пополнение баланса",
             "balance_button": "Баланс",
-            "balance_text": "Ваш текущий баланс: {amount} кредитов.",## todo - rework to real money and currencies
-            "tgbuy_desc": "Покупка \"корешков\" к Корнеслову",
-            "tgbuy_price_label": "10 кредитов",## where is??
+            "balance_text": "Ваш текущий баланс: {amount} Корешков.",## todo - rework to real money and currencies
+            "tgbuy_desc": "Покупка \"Корешков\" к Корнеслову",
+            "tgbuy_price_label": "10 Корешков",## where is??
             "tgbuy_payment_successful": "Оплата прошла!! Баланс пополнен на {money_amount} кредитов.",## todo - rework to real money and currencies (???)
             "tgbuy_payment_repeat": "Этот платеж уже был обработан ранее.",
             "tgbuy_invalid_currency": "Неподдерживаемая валюта. Попробуйте еще раз.",
@@ -127,6 +127,8 @@ MESSAGES = {
             "back": "Назад",
             "low_amount": "❌ У вас нет доступных запросов.\nПожалуйста, пополните баланс:", ## used twice
             "provider_invalid": "Выбранная валюта не поддерживается провайдером оплаты. Пожалуйста, выберите другую валюту или попробуйте позже.",
+            "enter_amount_koreshoks": "Введите количество Корешков для покупки (целое число):",
+            "approve_amount_conversion": "Вы выбрали {koreshoks} Корешков (~{real_amount} {currency}).\n\nВыберите действие:",
         },
         "handle_korneslov_query": {
             "query_format_error": "Неверный формат запроса. Пример: бытие 1 1-3,5",
@@ -254,13 +256,13 @@ Example:
             "set_to_english": "Language set to: english"
         },
         "tgpayment": {
-            "show_balance": "Your balance: <b>{requests_left}</b> koreshoks.",
+            "show_balance": "Your balance: <b>{requests_left}</b> Koreshoks.",
             "tgbuy_title": "Balance replenishment",
             "balance_button": "Balance",
-            "balance_text": "Your current balance: {amount} credits.",## todo - rework to real money and currencies
-            "tgbuy_desc": "Buy koreshoks to Korneslov",
-            "tgbuy_price_label": "10 credits",## where is??
-            "tgbuy_payment_successful": "Payment completed!! Balance refilled by {money_amount} credits.",## todo - rework to real money and currencies (???)
+            "balance_text": "Your current balance: {amount} Koreshoks.",## todo - rework to real money and currencies
+            "tgbuy_desc": "Buy Koreshoks to Korneslov",
+            "tgbuy_price_label": "10 Koreshoks",## where is??
+            "tgbuy_payment_successful": "Payment completed!! Balance refilled by {money_amount} Koreshoks.",## todo - rework to real money and currencies (???)
             "tgbuy_payment_repeat": "This payment has already been processed.",
             "tgbuy_invalid_currency": "Unsupported currency. Try again.",
             "choose_currency": "Choose currency for payment:",
@@ -272,6 +274,8 @@ Example:
             "back": "Back",
             "low_amount": "❌ You have not available requests.\nPlease recharge your balance:", ## used twice
             "provider_invalid": "The selected currency is not supported by the payment provider. Please select a different currency or try again later.",
+            "enter_amount_koreshoks": "Enter number of Koreshoks to buy (integer):",
+            "approve_amount_conversion": "You chose {koreshoks} Koreshoks (~{real_amount} {currency}).\n\nChoose option:",
         },
         "handle_korneslov_query": {
             "query_format_error": "Query format error. Example: genesis 1 1-3,5",

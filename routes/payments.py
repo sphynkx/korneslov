@@ -24,75 +24,99 @@ async def handle_pre_checkout(pre_checkout_query: types.PreCheckoutQuery):
 
 
 @router.callback_query(lambda c: c.data == "tgpay_confirm")
-async def handle_tgpay_confirm(callback: CallbackQuery):
+async def handle_tgpay_confirm(callback: types.CallbackQuery):
     state = get_user_state(callback.from_user.id)
+    lang = state.get("lang", "ru")
     currency = state.get("currency", "UAH")
-    amount = state.get("amount")
+    invoice_amount_cents = state.get("invoice_amount_cents")
+    koreshoks = state.get("koreshoks")
 
     provider = get_provider_by_currency(currency)
     if not provider:
-        await callback.message.answer(tr("tgpayment.tgbuy_invalid_currency", lang=state['lang'], currency=currency))
+        await callback.message.answer(tr("tgpayment.tgbuy_invalid_currency", lang=lang, currency=currency))
         await callback.answer()
         return
 
-    if not amount or not str(amount).isdigit() or int(amount) <= 0:
-        await callback.message.answer(tr("tgpayment.invalid_amount", lang=state['lang']))
+    if not invoice_amount_cents or not isinstance(invoice_amount_cents, int) or invoice_amount_cents <= 0:
+        await callback.message.answer(tr("tgpayment.invalid_amount", lang=lang))
         await callback.answer()
         return
-
-    invoice_amount = int(amount) * 100
 
     try:
         await callback.message.bot.send_invoice(
             chat_id=callback.message.chat.id,
-            title=tr("tgpayment.tgbuy_title", lang=state["lang"]),
-            description=tr("tgpayment.tgbuy_desc", lang=state["lang"]),
-            payload="balance_custom",
+            title=tr("tgpayment.tgbuy_title", lang=lang),
+            description=tr("tgpayment.tgbuy_desc", lang=lang),
+            payload=f"balance_koreshoks:{koreshoks}",
             provider_token=provider["provider_token"],
             currency=currency,
-            prices=[LabeledPrice(label=tr("tgpayment.tgbuy_price_label", lang=state["lang"]), amount=invoice_amount)],
+            prices=[LabeledPrice(label=tr("tgpayment.tgbuy_price_label", lang=lang), amount=invoice_amount_cents)],
             start_parameter="buy_balance",
             photo_url=TGPAYMENT_PHOTO
         )
     except exceptions.TelegramBadRequest as e:
-        ## Log details and handle PAYMENT_PROVIDER_INVALID correctly and specifically
+        ## Handle provider errors
         logging.exception("send_invoice failed: %s", e)
-        ## Flush payment state and inform user
         reset_payment_state(state)
         if "PAYMENT_PROVIDER_INVALID" in str(e):
-            await callback.message.answer(tr("tgpayment.provider_invalid", lang=state.get("lang", "ru"), currency=currency))
-            try:
-                await callback.answer()
-            except Exception:
-                ## ignore callback answer errors
-                pass
+            await callback.message.answer(tr("tgpayment.provider_invalid", lang=lang, currency=currency))
+            try: await callback.answer()
+            except: pass
             return
         else:
-            # Common error of invoice send- return user to payment menu
-            await callback.message.answer(tr("tgpayment.invoice_send_failed", lang=state.get("lang", "ru")))
-            try:
-                await callback.answer()
-            except Exception:
-                pass
+            await callback.message.answer(tr("tgpayment.invoice_send_failed", lang=lang))
+            try: await callback.answer()
+            except: pass
             return
 
-    ## Invoice sent succesfully - answer user on callback
     try:
         await callback.answer()
-    except Exception:
-        ## Ignore callback.answer error
-        pass
+    except: pass
 
 
 @router.message(lambda m: get_user_state(m.from_user.id).get("await_amount") is True and m.text and m.text.isdigit())
 async def handle_amount_input(message: types.Message):
     state = get_user_state(message.from_user.id)
     lang = state.get("lang", "ru")
-    amount = int(message.text)
-    state["amount"] = amount
+    koreshoks = int(message.text)
+    if koreshoks <= 0:
+        await message.answer(tr("tgpayment.invalid_amount", lang=lang))
+        reset_payment_state(state)
+        await message.answer(tr("oplata_menu.prompt", lang=lang), reply_markup=oplata_menu(lang=lang))
+        return
+
+    ## Save Koreshki and compute amount in chosen currency
+    state["koreshoks"] = koreshoks
     state["await_amount"] = False
+
+    currency = state.get("currency", "UAH")
+    provider = get_provider_by_currency(currency)
+    if not provider:
+        await message.answer(tr("tgpayment.tgbuy_invalid_currency", lang=lang, currency=currency))
+        reset_payment_state(state)
+        return
+
+    exchange_rate = provider.get("exchange_rate", 1)  ## koreshoks per 1 major currency unit
+    ## major_amount = koreshoks / exchange_rate  (units of currency)
+    if exchange_rate == 0:
+        await message.answer(tr("tgpayment.provider_invalid", lang=lang, currency=currency))
+        reset_payment_state(state)
+        return
+
+    major_amount = koreshoks / exchange_rate
+    ## invoice_amount in smallest currency unit (cents/kopecks)
+    invoice_amount_cents = int(round(major_amount * 100))
+
+    ## Save prepared invoice amount
+    state["invoice_amount_cents"] = invoice_amount_cents
+
+    ## Show approvement: Koreshki and real currency amount
+    tgpayment.approve_amount_conversion
     await message.answer(
-        tr("tgpayment.approve_amount", lang=lang, amount=amount, currency=state.get('currency', '')),
+        tr("tgpayment.approve_amount_conversion", lang=lang,
+           koreshoks=koreshoks,
+           real_amount=f"{major_amount:.2f}",
+           currency=currency),
         reply_markup=payment_confirmation_keyboard(lang=lang)
     )
 
@@ -137,10 +161,11 @@ async def cmd_pay_callback(callback: types.CallbackQuery):
 async def handle_currency_choice(callback: types.CallbackQuery):
     currency = callback.data.replace("tgpay_currency_", "")
     state = get_user_state(callback.from_user.id)
+    ## Ask Koreshki amount
     state["await_amount"] = True
     state["currency"] = currency
     await callback.message.answer(
-        tr("tgpayment.enter_amount", lang=state["lang"], currency=currency)
+        tr("tgpayment.enter_amount_koreshoks", lang=state.get("lang", "ru"), currency=currency)
     )
     await callback.answer()
 
@@ -195,18 +220,24 @@ async def handle_successful_payment(message: types.Message):
         await message.answer(tr("tgpayment.tgbuy_invalid_currency", lang=state['lang'], currency=currency))
         return
 
+    ## exchange_rate = koreshoks per 1 major currency unit
     exchange_rate = provider.get("exchange_rate", 1)
-    money_amount = int(sp.total_amount * exchange_rate / 100)
+
+    ## sp.total_amount is in smallest currency units (cents / kopecks)
+    ## koreshoks_paid = (sp.total_amount / 100) * exchange_rate
+    koreshoks_paid = int(sp.total_amount * exchange_rate / 100)
+
     tx_id = sp.provider_payment_charge_id or sp.telegram_payment_charge_id
 
+    ## Atomically add koreshoks to user's balance. set_user_amount expects delta in internal units.
     updated = await set_user_amount(
         message.from_user.id,
-        money_amount,
+        koreshoks_paid,
         tx_id
     )
 
     payload = getattr(sp, "invoice_payload", None)
-    amount = money_amount
+    amount = koreshoks_paid
     datetime_val = datetime.now().isoformat()
 
     def default_serializer(obj):
@@ -216,6 +247,7 @@ async def handle_successful_payment(message: types.Message):
 
     raw_json = json.dumps(message.model_dump(), default=default_serializer)
 
+    ## Store payment record: amount should be in koreshoks (internal unit)
     await add_tgpayment(
         user_id=message.from_user.id,
         payload=payload,
@@ -227,11 +259,14 @@ async def handle_successful_payment(message: types.Message):
         datetime_val=datetime_val,
         raw_json=raw_json,
     )
+
+    ## Notify user: use koreshoks_paid in message
     if updated:
-        await message.answer(tr("tgpayment.tgbuy_payment_successful", lang=state['lang'], money_amount=money_amount))
+        await message.answer(tr("tgpayment.tgbuy_payment_successful", lang=state['lang'], money_amount=koreshoks_paid))
     else:
         await message.answer(tr("tgpayment.tgbuy_payment_repeat", lang=state['lang']))
 
+    ## Return user to menus
     await message.answer(
         tr("main_menu.welcome", lang=state['lang']),
         reply_markup=oplata_menu(msg=message, lang=state['lang'])

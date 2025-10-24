@@ -26,17 +26,17 @@ async def global_error_handler(update_or_exception: Any, exception: Optional[Exc
     Returns True to stop propagation.
     """
     try:
-        # --- Normalize arguments: determine update and exception ---
+        ## --- Normalize arguments: determine update and exception ---
         update = None
-        # If a single object was passed and it looks like an ErrorEvent (has .exception), unwrap it
+        ## If a single object was passed and it looks like an ErrorEvent (has .exception), unwrap it
         if exception is None and hasattr(update_or_exception, "exception"):
-            # aiogram may pass ErrorEvent-like object
+            ## aiogram may pass ErrorEvent-like object
             evt = update_or_exception
             exception = getattr(evt, "exception", None)
             update = getattr(evt, "update", None)
         else:
             if exception is None:
-                # if only one arg provided, decide if it's exception or update
+                ## if only one arg provided, decide if it's exception or update
                 if isinstance(update_or_exception, Exception):
                     exception = update_or_exception
                     update = None
@@ -45,13 +45,13 @@ async def global_error_handler(update_or_exception: Any, exception: Optional[Exc
             else:
                 update = update_or_exception
 
-        # --- Logging ---
+        ## --- Logging ---
         if exception is not None:
             logging.exception("Global handler caught exception: %s", exception)
         else:
             logging.error("Global handler invoked without exception object. update=%r", update)
 
-        # Try to extract user/message for replying
+        ## Try to extract user/message for replying
         user_id = None
         msg_target = None
         try:
@@ -73,7 +73,7 @@ async def global_error_handler(update_or_exception: Any, exception: Optional[Exc
         except Exception:
             logging.exception("Failed to extract user/message from update in error handler")
 
-        # CASE 1: PAYMENT_PROVIDER_INVALID from Telegram when send_invoice
+        ## CASE 1: PAYMENT_PROVIDER_INVALID from Telegram when send_invoice
         if exception is not None and isinstance(exception, aiogram_exceptions.TelegramBadRequest) and "PAYMENT_PROVIDER_INVALID" in str(exception):
             lang = "ru"
             if user_id:
@@ -93,7 +93,7 @@ async def global_error_handler(update_or_exception: Any, exception: Optional[Exc
                 logging.exception("Failed to notify user about PAYMENT_PROVIDER_INVALID")
             return True
 
-        # CASE 2: DB connectivity errors (PyMySQL / Aiomysql)
+        ## CASE 2: DB connectivity errors
         if exception is not None and (isinstance(exception, (PyMySQLOperationalError, AiomysqlOperationalError)) or "Can't connect to MySQL server" in str(exception)):
             lang = "ru"
             if user_id:
@@ -112,7 +112,7 @@ async def global_error_handler(update_or_exception: Any, exception: Optional[Exc
                 logging.exception("Failed to notify user about DB connectivity issue")
             return True
 
-        # CASE 3: Broken HTML / can't parse entities (TelegramBadRequest)
+        ## CASE 3: Broken HTML / can't parse entities (TelegramBadRequest)
         if exception is not None and isinstance(exception, aiogram_exceptions.TelegramBadRequest):
             desc = str(exception).lower()
             if "can't parse entities" in desc or "can't parse message text" in desc or "can't parse" in desc:
@@ -133,7 +133,7 @@ async def global_error_handler(update_or_exception: Any, exception: Optional[Exc
                     logging.exception("Failed to send parse-failed fallback")
                 return True
 
-        # FALLBACK: notify user and swallow the exception
+        ## FALLBACK: notify user and swallow the exception
         try:
             lang = "ru"
             if user_id:
@@ -153,6 +153,6 @@ async def global_error_handler(update_or_exception: Any, exception: Optional[Exc
         return True
 
     except Exception as e:
-        # If the error handler itself crashes — log and return True (we don't want propagation)
+        ## If the error handler itself crashes — log and return True (we don't want propagation)
         logging.exception("Error handler crashed: %s", e)
         return True

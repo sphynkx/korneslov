@@ -5,7 +5,7 @@ from typing import Optional
 from aiogram import types
 import aiogram.exceptions as aiogram_exceptions
 
-# helper to send replies safely when text may contain broken HTML
+## helper to send replies safely when text may contain broken HTML
 async def answer_safe_message(target: types.Message | types.CallbackQuery, text: str, parse_mode: Optional[str] = "HTML", **kwargs):
     """
     target: types.Message or types.CallbackQuery (we'll send into .message for callback)
@@ -22,7 +22,7 @@ async def answer_safe_message(target: types.Message | types.CallbackQuery, text:
         else:
             await msg_target.answer(text, **kwargs)
     except aiogram_exceptions.TelegramBadRequest as e:
-        # Could be "can't parse entities" or other parse errors. Fallback to escaped text without parse_mode.
+        ## Could be "can't parse entities" or other parse errors. Fallback to escaped text without parse_mode.
         logging.warning("TelegramBadRequest while sending message; falling back to plain text: %s", e)
         try:
             safe_text = html.escape(text)

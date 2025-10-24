@@ -96,7 +96,7 @@ async def handle_korneslov_query(message: types.Message, refs=None):
 
         for part in split_message(answer):
             part = re.sub(r'<br.*?>', '', part)
-            # Используем безопасную отправку: попробуем HTML, при ошибке отправим экранированный текст
+            ## Safe send: try as HTML, if unsuccessfuly - escaped text
             await answer_safe_message(message, part, parse_mode="HTML")
             await asyncio.sleep(2)
 
@@ -112,7 +112,7 @@ async def handle_korneslov_query(message: types.Message, refs=None):
             logging.info(f"New user balance for user {uid} — {requests_left - price}")
 
     except aiogram_exceptions.TelegramBadRequest as e:
-        # Если Telegram жалуется на парсинг HTML при отправке части — логируем и шлём fallback
+        ## If we have troubles with HTML parsing during parts send - log and send fallback
         logging.exception("TelegramBadRequest while sending Korneslov response: %s", e)
         await update_request_response(req_id, status_oai=False, status_tg=False)
         await answer_safe_message(message, tr("handle_korneslov_query.handle_korneslov_query_exception", lang=state['lang']))
@@ -120,5 +120,5 @@ async def handle_korneslov_query(message: types.Message, refs=None):
         logging.exception("Error while processing Korneslov query: %s", e)
         ## Refresh status as error
         await update_request_response(req_id, status_oai=False, status_tg=False)
-        # Сообщение об ошибке также отправляем безопасно (чтобы не упасть при некорректном HTML)
+        ## Error msg send safe also!!
         await answer_safe_message(message, tr("handle_korneslov_query.handle_korneslov_query_exception", lang=state['lang']))
