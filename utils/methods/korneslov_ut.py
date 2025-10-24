@@ -122,6 +122,13 @@ async def ask_openai(uid, book, chapter, verse, system_prompt=None, test_banner=
         response = await client.chat.completions.create(**params)
         text = response.choices[0].message.content.strip()
         print(f"DEBUGA: {text}")
+
+        print("==============================================")
+        print("Tokens used:")
+        print("Prompt tokens:", response.usage.prompt_tokens)
+        print("Completion tokens:", response.usage.completion_tokens)
+        print("Total tokens:", response.usage.total_tokens)
+
         return f"""{tr("korneslov_py.ask_openai_return", lang=lang)}: {book} {chapter} {verse}\n<br><br>{text}{f'\n{test_banner}' if test_banner else ''}"""
 
     except Exception as e:
