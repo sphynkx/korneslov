@@ -117,11 +117,12 @@ MESSAGES = {
             "tgbuy_price_label": "10 кредитов",## where is??
             "tgbuy_payment_successful": "Оплата прошла!! Баланс пополнен на {money_amount} кредитов.",## todo - rework to real money and currencies (???)
             "tgbuy_payment_repeat": "Этот платеж уже был обработан ранее.",
+            "tgbuy_invalid_currency": "Неподдерживаемая валюта. Попробуйте еще раз.",
             "choose_currency": "Выберите валюту для оплаты:",
             "enter_amount": "Введите сумму оплаты в {currency}:",
             "pay_button": "Оплатить",
             "approve_amount": "Сумма для оплаты: {amount} {currency}\n\nВыберите действие:",
-            "wrong_amount": "Некорректная сумма, попробуйте еще раз.",
+            "invalid_amount": "Некорректная сумма, попробуйте еще раз.",
             "make_payment": "Произвести оплату",
             "back": "Назад",
             "low_amount": "❌ У вас нет доступных запросов.\nПожалуйста, пополните баланс:", ## used twice
@@ -261,11 +262,12 @@ Example:
             "tgbuy_price_label": "10 credits",## where is??
             "tgbuy_payment_successful": "Payment completed!! Balance refilled by {money_amount} credits.",## todo - rework to real money and currencies (???)
             "tgbuy_payment_repeat": "This payment has already been processed.",
+            "tgbuy_invalid_currency": "Unsupported currency. Try again.",
             "choose_currency": "Choose currency for payment:",
             "enter_amount": "Enter amount for payment in {currency}:",
             "pay_button": "Pay",
             "approve_amount": "Payment amount: {amount} {currency}\n\nChoose option:",
-            "wrong_amount": "Incorrect value. Try again.",
+            "invalid_amount": "Incorrect value. Try again.",
             "make_payment": "Make a payment",
             "back": "Back",
             "low_amount": "❌ You have not available requests.\nPlease recharge your balance:", ## used twice

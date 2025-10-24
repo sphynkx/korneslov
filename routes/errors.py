@@ -1,8 +1,9 @@
 import logging
 import html
-from typing import Optional
+from typing import Optional, Any
 
-from aiogram import Router, exceptions, types
+from aiogram import Router, types
+import aiogram.exceptions as aiogram_exceptions
 from pymysql import OperationalError as PyMySQLOperationalError
 from aiomysql import OperationalError as AiomysqlOperationalError
 
@@ -15,38 +16,42 @@ router = Router()
 
 
 @router.errors()
-async def global_error_handler(update_or_exception, exception: Optional[Exception] = None) -> bool:
+async def global_error_handler(update_or_exception: Any, exception: Optional[Exception] = None) -> bool:
     """
     Robust global error handler that tolerates different call signatures:
       - (update, exception)
       - (exception,)  (some internal callers may pass only exception)
       - (update,)     (rare)
+      - (ErrorEvent(update=..., exception=...))  (aiogram can pass this)
     Returns True to stop propagation.
     """
     try:
-        ## Normalize arguments: determine which is update and which is exception
-        if exception is None:
-            ## If only one arg provided, it may be the exception or the update.
-            if isinstance(update_or_exception, Exception):
-                exception = update_or_exception
-                update = None
-            else:
-                ## single update passed (no exception) — treat exception unknown
-                update = update_or_exception
-                exception = None
+        # --- Normalize arguments: determine update and exception ---
+        update = None
+        # If a single object was passed and it looks like an ErrorEvent (has .exception), unwrap it
+        if exception is None and hasattr(update_or_exception, "exception"):
+            # aiogram may pass ErrorEvent-like object
+            evt = update_or_exception
+            exception = getattr(evt, "exception", None)
+            update = getattr(evt, "update", None)
         else:
-            update = update_or_exception
+            if exception is None:
+                # if only one arg provided, decide if it's exception or update
+                if isinstance(update_or_exception, Exception):
+                    exception = update_or_exception
+                    update = None
+                else:
+                    update = update_or_exception
+            else:
+                update = update_or_exception
 
-##        logging.exception("Global handler caught exception: %s", exception)
-
-        ## Normalized variables: 'update' and 'exception'
-        ## More smart logging: if exception - use exception logger, else - log update info
+        # --- Logging ---
         if exception is not None:
             logging.exception("Global handler caught exception: %s", exception)
         else:
             logging.error("Global handler invoked without exception object. update=%r", update)
 
-        ## Try to extract user/message for replying
+        # Try to extract user/message for replying
         user_id = None
         msg_target = None
         try:
@@ -57,20 +62,19 @@ async def global_error_handler(update_or_exception, exception: Optional[Exceptio
                 user_id = update.from_user.id
                 msg_target = update
             elif update is not None:
-                ## update may be an Update object with .callback_query or .message
                 if hasattr(update, "callback_query") and getattr(update, "callback_query"):
                     cq = update.callback_query
-                    user_id = cq.from_user.id
+                    user_id = getattr(cq.from_user, "id", None)
                     msg_target = cq
                 elif hasattr(update, "message") and getattr(update, "message"):
                     m = update.message
-                    user_id = m.from_user.id
+                    user_id = getattr(m.from_user, "id", None)
                     msg_target = m
         except Exception:
             logging.exception("Failed to extract user/message from update in error handler")
 
-        ## CASE 1: Telegram bad request - PAYMENT_PROVIDER_INVALID
-        if isinstance(exception, exceptions.TelegramBadRequest) and exception.args and "PAYMENT_PROVIDER_INVALID" in str(exception):
+        # CASE 1: PAYMENT_PROVIDER_INVALID from Telegram when send_invoice
+        if exception is not None and isinstance(exception, aiogram_exceptions.TelegramBadRequest) and "PAYMENT_PROVIDER_INVALID" in str(exception):
             lang = "ru"
             if user_id:
                 state = get_user_state(user_id)
@@ -81,13 +85,16 @@ async def global_error_handler(update_or_exception, exception: Optional[Exceptio
                 if msg_target:
                     await answer_safe_message(msg_target, text)
                     if isinstance(msg_target, types.CallbackQuery):
-                        await msg_target.answer()
+                        try:
+                            await msg_target.answer()
+                        except Exception:
+                            pass
             except Exception:
                 logging.exception("Failed to notify user about PAYMENT_PROVIDER_INVALID")
             return True
 
-        ## CASE 2: DB connectivity issues
-        if isinstance(exception, (PyMySQLOperationalError, AiomysqlOperationalError)) or (exception and "Can't connect to MySQL server" in str(exception)):
+        # CASE 2: DB connectivity errors (PyMySQL / Aiomysql)
+        if exception is not None and (isinstance(exception, (PyMySQLOperationalError, AiomysqlOperationalError)) or "Can't connect to MySQL server" in str(exception)):
             lang = "ru"
             if user_id:
                 state = get_user_state(user_id)
@@ -97,13 +104,16 @@ async def global_error_handler(update_or_exception, exception: Optional[Exceptio
                 if msg_target:
                     await answer_safe_message(msg_target, text)
                     if isinstance(msg_target, types.CallbackQuery):
-                        await msg_target.answer()
+                        try:
+                            await msg_target.answer()
+                        except Exception:
+                            pass
             except Exception:
                 logging.exception("Failed to notify user about DB connectivity issue")
             return True
 
-        ## CASE 3: Broken HTML / cant parse entities
-        if isinstance(exception, exceptions.TelegramBadRequest) and exception.args:
+        # CASE 3: Broken HTML / can't parse entities (TelegramBadRequest)
+        if exception is not None and isinstance(exception, aiogram_exceptions.TelegramBadRequest):
             desc = str(exception).lower()
             if "can't parse entities" in desc or "can't parse message text" in desc or "can't parse" in desc:
                 lang = "ru"
@@ -115,12 +125,15 @@ async def global_error_handler(update_or_exception, exception: Optional[Exceptio
                     if msg_target:
                         await answer_safe_message(msg_target, text)
                         if isinstance(msg_target, types.CallbackQuery):
-                            await msg_target.answer()
+                            try:
+                                await msg_target.answer()
+                            except Exception:
+                                pass
                 except Exception:
                     logging.exception("Failed to send parse-failed fallback")
                 return True
 
-        ## FALLBACK: notify user and swallow the exception
+        # FALLBACK: notify user and swallow the exception
         try:
             lang = "ru"
             if user_id:
@@ -130,13 +143,16 @@ async def global_error_handler(update_or_exception, exception: Optional[Exceptio
             if msg_target:
                 await answer_safe_message(msg_target, text)
                 if isinstance(msg_target, types.CallbackQuery):
-                    await msg_target.answer()
+                    try:
+                        await msg_target.answer()
+                    except Exception:
+                        pass
         except Exception:
             logging.exception("Failed to send fallback unexpected error message")
 
         return True
 
     except Exception as e:
-        ## If the error handler itself crashes - log and return True (we don't want propagation)
+        # If the error handler itself crashes — log and return True (we don't want propagation)
         logging.exception("Error handler crashed: %s", e)
         return True
