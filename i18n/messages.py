@@ -18,7 +18,7 @@ MESSAGES = {
         },
 
         "main_menu": {
-            "welcome": "Добро пожаловать! Выберите действие:",
+            "welcome": "Выберите действие:",
             "test1": "бытие 1 1",
             "test2": "бытие 3 1",
             "test3": "тест 1 2",
@@ -112,10 +112,10 @@ MESSAGES = {
             "show_balance": "Ваш баланс: <b>{requests_left}</b> Корешков.",
             "tgbuy_title": "Пополнение баланса",
             "balance_button": "Баланс",
-            "balance_text": "Ваш текущий баланс: {amount} Корешков.",## todo - rework to real money and currencies
+            "balance_text": "Ваш текущий баланс: {amount} Корешков.",
             "tgbuy_desc": "Покупка \"Корешков\" к Корнеслову",
             "tgbuy_price_label": "10 Корешков",## where is??
-            "tgbuy_payment_successful": "Оплата прошла!! Баланс пополнен на {money_amount} кредитов.",## todo - rework to real money and currencies (???)
+            "tgbuy_payment_successful": "Оплата прошла!! Баланс пополнен на {money_amount} Корешков.",
             "tgbuy_payment_repeat": "Этот платеж уже был обработан ранее.",
             "tgbuy_invalid_currency": "Неподдерживаемая валюта. Попробуйте еще раз.",
             "choose_currency": "Выберите валюту для оплаты:",
@@ -167,7 +167,7 @@ Advanced request - 0.3 EUR.
             "testmode_banner": "\n\n<b>Test mode: payment and balance are disabled.</b>",
             },
         "main_menu": {
-            "welcome": "Welcome! Choose an action:",
+            "welcome": "Choose an action:",
             "test1": "genesis 1 1",
             "test2": "genesis 3 1",
             "test3": "test 1 2",
@@ -259,10 +259,10 @@ Example:
             "show_balance": "Your balance: <b>{requests_left}</b> Koreshoks.",
             "tgbuy_title": "Balance replenishment",
             "balance_button": "Balance",
-            "balance_text": "Your current balance: {amount} Koreshoks.",## todo - rework to real money and currencies
+            "balance_text": "Your current balance: {amount} Koreshoks.",
             "tgbuy_desc": "Buy Koreshoks to Korneslov",
             "tgbuy_price_label": "10 Koreshoks",## where is??
-            "tgbuy_payment_successful": "Payment completed!! Balance refilled by {money_amount} Koreshoks.",## todo - rework to real money and currencies (???)
+            "tgbuy_payment_successful": "Payment completed!! Balance refilled by {money_amount} Koreshoks.",
             "tgbuy_payment_repeat": "This payment has already been processed.",
             "tgbuy_invalid_currency": "Unsupported currency. Try again.",
             "choose_currency": "Choose currency for payment:",

@@ -1,8 +1,11 @@
 import asyncio
+import logging
 
 from aiogram import Bot, Dispatcher
 
 from config import TELEGRAM_BOT_TOKEN
+
+from services.ai_factory import get_ai_service
 
 from routes.errors import router as errors_router
 
@@ -27,6 +30,15 @@ from routes.menus.echo_routes import router as menu_echo_router
 
 bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher()
+
+try:
+    ## try to select provider at start, and log result
+    svc = get_ai_service()
+    logging.info("AI provider '%s' loaded: %s", getattr(__import__("config"), "AI_PROVIDER", "openai"), svc.__name__ if hasattr(svc, "__name__") else str(svc))
+except Exception as e:
+    logging.warning("AI provider check failed at startup: %s", e)
+    ## Dont fall, only log
+
 
 ## IMPORTANT:
 ## 0. Global error-router must be connected first - before any other routes!!

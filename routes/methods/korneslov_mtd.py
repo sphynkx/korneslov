@@ -20,6 +20,8 @@ from db.requests import add_request, update_request_response
 from db.responses import add_response
 from db.tgpayments import get_user_amount, set_user_amount
 
+## Bugfix - kb didnt recover after response.
+from menus.main_menu import main_reply_keyboard
 
 router = Router()
 
@@ -89,14 +91,14 @@ async def handle_korneslov_query(message: types.Message, refs=None):
         verses_str = group_ranges(verses)
 
     try:
-        ## Response generation via Korneslov
+        ## Response generation via AI (provider-agnostic)
         answer = await fetch_full_korneslov_response(
             book, chapter, verses_str, uid, level=level
         )
 
         for part in split_message(answer):
             part = re.sub(r'<br.*?>', '', part)
-            ## Safe send: try as HTML, if unsuccessfuly - escaped text
+            ## Use safe send: try HTML, if error - send escaped text
             await answer_safe_message(message, part, parse_mode="HTML")
             await asyncio.sleep(2)
 
@@ -111,8 +113,17 @@ async def handle_korneslov_query(message: types.Message, refs=None):
             updated = await set_user_amount(uid, -price, str(req_id))
             logging.info(f"New user balance for user {uid} — {requests_left - price}")
 
+        ## Bugfix - kb didnt recover after response.
+        try:
+            await message.answer(
+                tr("main_menu.welcome", lang=lang),
+                reply_markup=main_reply_keyboard(msg=message)
+            )
+        except Exception:
+            logging.exception("Failed to send main menu keyboard after AI response")
+
     except aiogram_exceptions.TelegramBadRequest as e:
-        ## If we have troubles with HTML parsing during parts send - log and send fallback
+        ## If Telegram fails on HTML parsing during send parts - log and send fallback
         logging.exception("TelegramBadRequest while sending Korneslov response: %s", e)
         await update_request_response(req_id, status_oai=False, status_tg=False)
         await answer_safe_message(message, tr("handle_korneslov_query.handle_korneslov_query_exception", lang=state['lang']))
@@ -120,5 +131,4 @@ async def handle_korneslov_query(message: types.Message, refs=None):
         logging.exception("Error while processing Korneslov query: %s", e)
         ## Refresh status as error
         await update_request_response(req_id, status_oai=False, status_tg=False)
-        ## Error msg send safe also!!
         await answer_safe_message(message, tr("handle_korneslov_query.handle_korneslov_query_exception", lang=state['lang']))
