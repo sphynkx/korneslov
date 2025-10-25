@@ -96,9 +96,10 @@ async def handle_korneslov_query(message: types.Message, refs=None):
             book, chapter, verses_str, uid, level=level
         )
 
-        for part in split_message(answer):
+        parts = split_message(answer)
+        logging.info("Korneslov: generated answer length=%d chars, parts=%d", len(answer), len(parts))
+        for part in parts:
             part = re.sub(r'<br.*?>', '', part)
-            ## Use safe send: try HTML, if error - send escaped text
             await answer_safe_message(message, part, parse_mode="HTML")
             await asyncio.sleep(2)
 

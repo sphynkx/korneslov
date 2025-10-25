@@ -4,3 +4,5 @@ openai<1.38
 httpx[socks]<0.26
 aiomysql
 python-dotenv
+google-genai
+requests[socks]

@@ -96,27 +96,28 @@ async def handle_amount_input(message: types.Message):
         reset_payment_state(state)
         return
 
+    ## Compute invoice amount in the smallest currency unit (cents/kopecks)
     exchange_rate = provider.get("exchange_rate", 1)  ## koreshoks per 1 major currency unit
-    ## major_amount = koreshoks / exchange_rate  (units of currency)
     if exchange_rate == 0:
         await message.answer(tr("tgpayment.provider_invalid", lang=lang, currency=currency))
         reset_payment_state(state)
         return
 
     major_amount = koreshoks / exchange_rate
-    ## invoice_amount in smallest currency unit (cents/kopecks)
     invoice_amount_cents = int(round(major_amount * 100))
 
-    ## Save prepared invoice amount
+    ## Save prepared invoice amount in state for later (used by send_invoice)
     state["invoice_amount_cents"] = invoice_amount_cents
 
-    ## Show approvement: Koreshki and real currency amount
-    tgpayment.approve_amount_conversion
+    ## Show approval text with confirmation keyboard
     await message.answer(
-        tr("tgpayment.approve_amount_conversion", lang=lang,
-           koreshoks=koreshoks,
-           real_amount=f"{major_amount:.2f}",
-           currency=currency),
+        tr(
+            "tgpayment.approve_amount_conversion",
+            lang=lang,
+            koreshoks=koreshoks,
+            real_amount=f"{major_amount:.2f}",
+            currency=currency
+        ),
         reply_markup=payment_confirmation_keyboard(lang=lang)
     )
 
