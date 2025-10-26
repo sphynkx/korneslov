@@ -2,6 +2,10 @@ import asyncio
 
 from aiogram import Bot, Dispatcher
 
+from aiohttp import ClientTimeout
+from aiogram.client.session.aiohttp import AiohttpSession
+from config import TG_POLLING_TIMEOUT, TG_SOCK_CONNECT_TIMEOUT, TG_SOCK_READ_TIMEOUT
+
 from config import TELEGRAM_BOT_TOKEN
 
 from routes.errors import router as errors_router
@@ -24,6 +28,10 @@ from routes.menus.echo_routes import router as menu_echo_router
 
 ##logging.basicConfig(level=logging.INFO)
 ##logging.basicConfig(level=logging.DEBUG)
+
+timeout = ClientTimeout(total=None, sock_connect=TG_SOCK_CONNECT_TIMEOUT, sock_read=TG_SOCK_READ_TIMEOUT)
+session = AiohttpSession(timeout=timeout)
+
 
 bot = Bot(token=TELEGRAM_BOT_TOKEN, parse_mode="HTML")
 dp = Dispatcher()
@@ -56,7 +64,8 @@ dp.include_router(menu_echo_router)
 
 
 async def main():
-    await dp.start_polling(bot)
+##    await dp.start_polling(bot)
+    await dp.start_polling(bot, polling_timeout=TG_POLLING_TIMEOUT)
 
 
 if __name__ == "__main__":

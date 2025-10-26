@@ -75,16 +75,22 @@ async def fetch_full_korneslov_response(book, chapter, verses_str, uid, level="h
     system_prompt = build_korneslov_prompt(book, chapter, verses_str, level, lang=lang)
     answer = await gen_func(book, chapter, verses_str, system_prompt=system_prompt, followup=None)
 
-    ## Permit false repeates - check for marker at the end of Part 3
-    if not is_truncated(answer):
-        return answer  ## If present - return immediately w/o any followups
+    ## Treat empty as truncated to allow a followup attempt
+    truncated = is_truncated(answer) or (not answer)
+
+    if not truncated:
+        return answer  ## full, return immediately
 
     all_answers = [answer]
     loops = 0
-    while is_truncated(answer) and loops < max_loops:
+    while truncated and loops < max_loops:
         followup_prompt_template = FOLLOWUP_PROMPT.get(lang, FOLLOWUP_PROMPT["ru"])
         followup_prompt = followup_prompt_template.format(book=book, chapter=chapter, verse=verses_str)
         answer = await gen_func(book, chapter, verses_str, system_prompt=system_prompt, followup=followup_prompt)
         all_answers.append(answer)
+        truncated = is_truncated(answer) or (not answer)
         loops += 1
-    return "\n\n".join(all_answers)
+
+    ## Return the best (longest) attempt to avoid spamming with all partials
+    best_answer = max(all_answers, key=lambda s: len(s) if isinstance(s, str) else 0)
+    return best_answer

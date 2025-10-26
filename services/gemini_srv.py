@@ -14,7 +14,7 @@ from config import (
 from i18n.messages import tr
 from texts.prompts import KORNESLOV_USER_PROMPT
 from utils.userstate import get_user_state
-from utils.gemini_ut import extract_text_from_gemini_response, build_gemini_config
+from utils.gemini_ut import extract_text_from_gemini_response, build_gemini_config, sanitize_for_telegram_html
 
 
 _client = None
@@ -49,7 +49,6 @@ async def ask_gemini(
     lang = state.get("lang", "ru")
 
     if not GEMINI_API_KEY:
-        ## Reuse OpenAI message key for consistency
         return tr(
             "korneslov_py.ask_openai_no_OPENAI_API_KEY",
             book=book,
@@ -70,14 +69,12 @@ async def ask_gemini(
 
     client = _get_client()
 
-    ## Build config from config.py values (cap tokens, temperature, etc.)
     config = build_gemini_config(
         max_output_tokens=GEMINI_MAX_OUTPUT_TOKENS_CAP,
         temperature=GEMINI_TEMPERATURE,
         system_instruction=system_prompt or "",
     )
 
-    ## Log sanitized request
     try:
         logging.debug(
             "Gemini request params (sanitized): {'model': %r, 'system_preview': %r, 'user_preview': %r}",
@@ -101,17 +98,12 @@ async def ask_gemini(
     except Exception:
         logging.exception("Failed to log Gemini request preview")
 
-    ## Single attempt
     try:
-        if config is not None:
-            response = await _call_generate(client, model=GEMINI_MODEL, config=config, contents=user_content)
-        else:
-            ## Fallback without config (should not happen if utils.gemini_ut is correct)
-            response = await _call_generate(client, model=GEMINI_MODEL, config=None, contents=user_content)
-
+        response = await _call_generate(client, model=GEMINI_MODEL, config=config, contents=user_content)
         text = extract_text_from_gemini_response(response)
+        ## Sanitize unsupported Telegram-HTML tags to reduce parse errors
+        text = sanitize_for_telegram_html(text)
 
-        ## Try to log token usage if available
         try:
             usage = getattr(response, "usage_metadata", None)
             prompt_tokens = getattr(usage, "prompt_token_count", None) if usage else None
@@ -141,9 +133,4 @@ async def ask_gemini(
 
 
 async def _call_generate(client: genai.Client, model: str, config: Optional[genai_types.GenerateContentConfig], contents: str):
-    """
-    Thin async wrapper to call client.models.generate_content.
-    """
-    ## genai client is sync; run in thread? Here we call directly (library may allow await if integrated).
-    ## If sync-only, consider running in executor. Keeping simple per current project async style.
     return client.models.generate_content(model=model, config=config, contents=contents)

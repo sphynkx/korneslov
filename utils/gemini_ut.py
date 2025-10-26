@@ -1,4 +1,5 @@
 import logging
+import re
 from typing import Optional
 
 from google.genai import types as genai_types
@@ -91,7 +92,6 @@ def _collect_parts_text(parts) -> str:
             elif isinstance(item, dict):
                 txt = item.get("text") or item.get("plain_text") or item.get("textRaw")
             else:
-                ## last fallback
                 if isinstance(item, str):
                     txt = item
             if isinstance(txt, str) and txt.strip():
@@ -99,3 +99,30 @@ def _collect_parts_text(parts) -> str:
     except Exception:
         logging.exception("Failed to collect parts text from Gemini response")
     return "\n\n".join(t for t in texts if t).strip()
+
+
+def _get_candidate_content(cand):
+    try:
+        content = getattr(cand, "content", None)
+        if content:
+            return content
+        if isinstance(cand, dict):
+            return cand.get("content")
+    except Exception:
+        pass
+    return None
+
+
+def sanitize_for_telegram_html(text: str) -> str:
+    """
+    Remove unsupported Telegram-HTML tags that cause parse errors, preserving inner text.
+    Minimal set: sup, sub, h1..h6. Extend if needed.
+    """
+    if not isinstance(text, str) or not text:
+        return text or ""
+
+    text = re.sub(r"</?sup[^>]*>", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"</?sub[^>]*>", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"</?h[1-6][^>]*>", "", text, flags=re.IGNORECASE)
+
+    return text

@@ -1,41 +1,82 @@
 import os
-from dotenv import load_dotenv
+import json
 
-load_dotenv()
+try:
+    from dotenv import load_dotenv  # type: ignore
+    load_dotenv()
+except Exception:
+    ## dotenv not installed or .env not present — continue, values may be in the environment
+    pass
 
-## Keys and tokens
-TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
 
-## DB support
+## ---------------------------
+## General / Telegram
+## ---------------------------
+TG_POLLING_TIMEOUT = int(os.getenv("TG_POLLING_TIMEOUT", "60"))
+TG_SOCK_CONNECT_TIMEOUT = float(os.getenv("TG_SOCK_CONNECT_TIMEOUT", "10"))
+TG_SOCK_READ_TIMEOUT = float(os.getenv("TG_SOCK_READ_TIMEOUT", "600"))
+## Telegram bot token (required)
+_TELEGRAM_BOT_TOKEN_RAW = os.getenv("TELEGRAM_BOT_TOKEN", "")
+## sanitize token
+TELEGRAM_BOT_TOKEN = _TELEGRAM_BOT_TOKEN_RAW.strip().strip('"').strip("'").lstrip("\ufeff")
+
+
+## Parse mode used when creating Bot in main.py (kept for reference)
+DEFAULT_PARSE_MODE = os.getenv("DEFAULT_PARSE_MODE", "HTML")
+
+
+## ---------------------------
+## Database (MySQL / aiomysql)
+## ---------------------------
 DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", 3306)
+DB_PORT = int(os.getenv("DB_PORT", 3306))
 DB_NAME = os.getenv("DB_NAME", "korneslov")
 DB_USER = os.getenv("DB_USER", "korneslov")
 DB_PASS = os.getenv("DB_PASS", "")
 
-## Telegram Bot Payment
-TGPAYMENT_PROVIDER_TOKEN = os.getenv("TGPAYMENT_PROVIDER_TOKEN", "TEST")
-TGPAYMENT_PROVIDER_CURRENCY = os.getenv("TGPAYMENT_PROVIDER_CURRENCY", "RUB")
-TGPAYMENT_AMOUNT = int(os.getenv("TGPAYMENT_AMOUNT", "1000"))
+## Pool size for aiomysql
+DB_POOL_MIN_SIZE = int(os.getenv("DB_POOL_MIN_SIZE", 1))
+DB_POOL_MAX_SIZE = int(os.getenv("DB_POOL_MAX_SIZE", 10))
+
+
+## ---------------------------
+## Payment / TG payment providers
+## ---------------------------
+## Telegram invoice photo (optional)
 TGPAYMENT_PHOTO = os.getenv("TGPAYMENT_PHOTO", "")
 
+## Static providers list — keep the original structure exactly as requested.
+## These providers are used in different deployments; do NOT remove or transform this list.
 TGPAYMENT_PROVIDERS = [
     {
         "name": "Provider1",
         "provider_token": "1234567890:TEST:XXXXXXXXXXXXXXXXXX",
         "currency": "EUR",
         "country": "ES",
-        "exchange_rate": 97.8,
+        "exchange_rate": 0.98,
     },
     {
         "name": "Provider2",
         "provider_token": "1234567890:TEST:XXXXXXXXXXXXXXXXXX",
+        "currency": "RUB",
+        "country": "RU",
+        "exchange_rate": 0.1,
+    },
+    {
+        "name": "Provider3",
+        "provider_token": "1234567890:TEST:XXXXXXXXXXXXXXXXXX",
         "currency": "UAH",
         "country": "UA",
-        "exchange_rate": 2,
+        "exchange_rate": 0.2,
     },
 ]
+
+## Internal prices for requests in "koreshoks" (internal unit)
+TGPAYMENT_REQUEST_PRICES = {
+    "light": int(os.getenv("PRICE_LIGHT", 1)),
+    "smart": int(os.getenv("PRICE_SMART", 2)),
+    "hard": int(os.getenv("PRICE_HARD", 3)),
+}
 
 
 ## ---------------------------
@@ -44,13 +85,12 @@ TGPAYMENT_PROVIDERS = [
 ## Select provider via environment: "openai" or "gemini" (case-insensitive)
 AI_PROVIDER = os.getenv("AI_PROVIDER", "openai").lower()
 
-# Gemini config
+## Gemini config
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
-# cap can be tuned; start conservative (e.g., 12000) and adjust after tests
 GEMINI_MAX_OUTPUT_TOKENS_CAP = int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS_CAP", "12000"))
 GEMINI_TEMPERATURE = float(os.getenv("GEMINI_TEMPERATURE", "0.7"))
-
+GEMINI_USE_STREAMING = (os.getenv("GEMINI_USE_STREAMING", "false").lower() in ("1", "true", "yes"))
 
 ## OpenAI config
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
@@ -60,6 +100,7 @@ OPENAI_MODEL_PARAMS = {
     "gpt-4o": {"max_tokens": 3000, "temperature": 0.7},
     "gpt-5": {},
 }
+
 
 ## ---------------------------
 ## Unified accessors and helpers
@@ -87,17 +128,6 @@ def get_model_and_params():
     params = OPENAI_MODEL_PARAMS.get(model, {}).copy()
     return model, params
 
-
-def get_api_key_for_provider_2DEL():
-    """
-    Return API key for the currently selected AI_PROVIDER.
-    """
-    provider = (AI_PROVIDER or "openai").lower()
-    if provider == "openai":
-        return OPENAI_API_KEY
-    if provider == "gemini":
-        return GEMINI_API_KEY
-    return ""
 
 ## ---------------------------
 ## Misc / feature flags / debug
