@@ -20,6 +20,8 @@ from db.requests import add_request, update_request_response
 from db.responses import add_response
 from db.tgpayments import get_user_amount, set_user_amount
 
+## Bugfix - kb didnt recover after response.
+from menus.main_menu import main_reply_keyboard
 
 router = Router()
 
@@ -110,6 +112,15 @@ async def handle_korneslov_query(message: types.Message, refs=None):
         if requests_left != -1 and requests_left >= price:
             updated = await set_user_amount(uid, -price, str(req_id))
             logging.info(f"New user balance for user {uid} — {requests_left - price}")
+
+        ## Bugfix - kb didnt recover after response.
+        try:
+            await message.answer(
+                tr("main_menu.welcome", lang=lang),
+                reply_markup=main_reply_keyboard(msg=message)
+            )
+        except Exception:
+            logging.exception("Failed to send main menu keyboard after AI response")
 
     except aiogram_exceptions.TelegramBadRequest as e:
         ## If we have troubles with HTML parsing during parts send - log and send fallback

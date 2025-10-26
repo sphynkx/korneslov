@@ -111,7 +111,6 @@ async def handle_amount_input(message: types.Message):
     state["invoice_amount_cents"] = invoice_amount_cents
 
     ## Show approvement: Koreshki and real currency amount
-    tgpayment.approve_amount_conversion
     await message.answer(
         tr("tgpayment.approve_amount_conversion", lang=lang,
            koreshoks=koreshoks,

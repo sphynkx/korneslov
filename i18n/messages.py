@@ -18,7 +18,7 @@ MESSAGES = {
         },
 
         "main_menu": {
-            "welcome": "Добро пожаловать! Выберите действие:",
+            "welcome": "Выберите действие:",
             "test1": "бытие 1 1",
             "test2": "бытие 3 1",
             "test3": "тест 1 2",
@@ -167,7 +167,7 @@ Advanced request - 0.3 EUR.
             "testmode_banner": "\n\n<b>Test mode: payment and balance are disabled.</b>",
             },
         "main_menu": {
-            "welcome": "Welcome! Choose an action:",
+            "welcome": "Choose an action:",
             "test1": "genesis 1 1",
             "test2": "genesis 3 1",
             "test3": "test 1 2",
