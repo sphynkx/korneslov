@@ -1,6 +1,7 @@
 aiogram==3.4.1
-python-dotenv==1.0.1
 openai<1.38
 httpx[socks]<0.26
 aiomysql
 python-dotenv
+google-genai
+requests[socks]
