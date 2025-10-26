@@ -68,10 +68,9 @@ async def fetch_full_korneslov_response(book, chapter, verses_str, uid, level="h
     lang = state.get("lang", "ru")
 
     async def gen_func(book, chapter, verses_str, system_prompt, followup=None):
-        ## Dispatch to configured provider; for now OpenAI service is used.
-        ## Later, add Gemini service with the same signature.
-        from services.openai_srv import ask_openai  ## Kept here to avoid circulars during refactor stage.
-        return await ask_openai(uid, book, chapter, verses_str, system_prompt=system_prompt, followup=followup)
+        ## Provider-agnostic dispatch: OpenAI or Gemini is selected by AI_PROVIDER in config
+        from services.ai_provider import ask_ai  ## keep here to avoid circular imports during refactor stage
+        return await ask_ai(uid, book, chapter, verses_str, system_prompt=system_prompt, followup=followup)
 
     system_prompt = build_korneslov_prompt(book, chapter, verses_str, level, lang=lang)
     answer = await gen_func(book, chapter, verses_str, system_prompt=system_prompt, followup=None)

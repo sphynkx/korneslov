@@ -38,13 +38,73 @@ TGPAYMENT_PROVIDERS = [
 ]
 
 
-## OpenAI params
-OPENAI_MODEL = "gpt-5"
+## ---------------------------
+## AI providers (OpenAI / Gemini) and model selection
+## ---------------------------
+## Select provider via environment: "openai" or "gemini" (case-insensitive)
+AI_PROVIDER = os.getenv("AI_PROVIDER", "openai").lower()
+
+# Gemini config
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+# cap can be tuned; start conservative (e.g., 12000) and adjust after tests
+GEMINI_MAX_OUTPUT_TOKENS_CAP = int(os.getenv("GEMINI_MAX_OUTPUT_TOKENS_CAP", "12000"))
+GEMINI_TEMPERATURE = float(os.getenv("GEMINI_TEMPERATURE", "0.7"))
+
+
+## OpenAI config
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY", "")
+OPENAI_MODEL = os.getenv("OPENAI_MODEL", "gpt-5")
 OPENAI_MODEL_PARAMS = {
     "gpt-4o-mini": {"max_tokens": 3000, "temperature": 0.7},
     "gpt-4o": {"max_tokens": 3000, "temperature": 0.7},
     "gpt-5": {},
 }
+
+## ---------------------------
+## Unified accessors and helpers
+## ---------------------------
 def get_model_and_params():
-    from config import OPENAI_MODEL, OPENAI_MODEL_PARAMS
-    return OPENAI_MODEL, OPENAI_MODEL_PARAMS.get(OPENAI_MODEL, {})
+    """
+    Return a tuple (model_name, params_dict) depending on currently selected AI_PROVIDER.
+    Params are provider-agnostic (e.g. max_tokens, temperature). Service wrapper
+    (openai_srv / gemini_srv) must adapt these keys as required.
+    """
+    provider = (AI_PROVIDER or "openai").lower()
+
+    if provider == "openai":
+        model = OPENAI_MODEL
+        params = OPENAI_MODEL_PARAMS.get(model, {}).copy()
+        return model, params
+
+    if provider == "gemini":
+        model = GEMINI_MODEL
+        params = GEMINI_MODEL_PARAMS.get(model, {}).copy()
+        return model, params
+
+    ## Unknown provider: fallback to OpenAI defaults
+    model = OPENAI_MODEL
+    params = OPENAI_MODEL_PARAMS.get(model, {}).copy()
+    return model, params
+
+
+def get_api_key_for_provider_2DEL():
+    """
+    Return API key for the currently selected AI_PROVIDER.
+    """
+    provider = (AI_PROVIDER or "openai").lower()
+    if provider == "openai":
+        return OPENAI_API_KEY
+    if provider == "gemini":
+        return GEMINI_API_KEY
+    return ""
+
+## ---------------------------
+## Misc / feature flags / debug
+## ---------------------------
+## Keep DUMMY_TEXT flag for offline dev/test flows
+DUMMY_TEXT = os.getenv("DUMMY_TEXT", "0").lower() in ("1", "true", "yes")
+
+## Optional flag to enable saving of raw requests/responses for debugging
+SAVE_RAW_AI_EXCHANGES = os.getenv("SAVE_RAW_AI_EXCHANGES", "0").lower() in ("1", "true", "yes")
+
