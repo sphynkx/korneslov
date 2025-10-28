@@ -64,13 +64,16 @@ async def fetch_full_korneslov_response(book, chapter, verses_str, uid, level="h
     """
     Receives full response by Korneslov method and making follow-up requests if need. With verses ranges support.
     """
+    from services.concurrency import acquire_ai  ## local import to avoid circulars
+
     state = get_user_state(uid)
     lang = state.get("lang", "ru")
 
     async def gen_func(book, chapter, verses_str, system_prompt, followup=None):
-        ## Provider-agnostic dispatch: OpenAI or Gemini is selected by AI_PROVIDER in config
+        ## Provider-agnostic dispatch with AI concurrency limiting
         from services.ai_provider import ask_ai  ## keep here to avoid circular imports during refactor stage
-        return await ask_ai(uid, book, chapter, verses_str, system_prompt=system_prompt, followup=followup)
+        async with acquire_ai():
+            return await ask_ai(uid, book, chapter, verses_str, system_prompt=system_prompt, followup=followup)
 
     system_prompt = build_korneslov_prompt(book, chapter, verses_str, level, lang=lang)
     answer = await gen_func(book, chapter, verses_str, system_prompt=system_prompt, followup=None)
@@ -91,6 +94,5 @@ async def fetch_full_korneslov_response(book, chapter, verses_str, uid, level="h
         truncated = is_truncated(answer) or (not answer)
         loops += 1
 
-    ## Return the best (longest) attempt to avoid spamming with all partials
     best_answer = max(all_answers, key=lambda s: len(s) if isinstance(s, str) else 0)
     return best_answer

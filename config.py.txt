@@ -25,20 +25,6 @@ TELEGRAM_BOT_TOKEN = _TELEGRAM_BOT_TOKEN_RAW.strip().strip('"').strip("'").lstri
 DEFAULT_PARSE_MODE = os.getenv("DEFAULT_PARSE_MODE", "HTML")
 
 
-# --------------------
-## Concurrency tuning:
-## -------------------
-AI_MAX_CONCURRENT = int(os.getenv("AI_MAX_CONCURRENT", "2"))
-TG_SEND_MAX_CONCURRENT = int(os.getenv("TG_SEND_MAX_CONCURRENT", "4"))
-TG_SEND_RETRY_MAX = int(os.getenv("TG_SEND_RETRY_MAX", "3"))
-TG_SEND_RETRY_BASE_DELAY = float(os.getenv("TG_SEND_RETRY_BASE_DELAY", "0.5"))
-TG_SEND_RETRY_MAX_DELAY = float(os.getenv("TG_SEND_RETRY_MAX_DELAY", "5.0"))
-
-GEMINI_MAX_RETRIES = int(os.getenv("GEMINI_MAX_RETRIES", "2"))
-GEMINI_RETRY_BASE_DELAY = float(os.getenv("GEMINI_RETRY_BASE_DELAY", "1.0"))
-GEMINI_RETRY_MAX_DELAY = float(os.getenv("GEMINI_RETRY_MAX_DELAY", "8.0"))
-
-
 ## ---------------------------
 ## Database (MySQL / aiomysql)
 ## ---------------------------
@@ -63,22 +49,22 @@ TGPAYMENT_PHOTO = os.getenv("TGPAYMENT_PHOTO", "")
 ## These providers are used in different deployments; do NOT remove or transform this list.
 TGPAYMENT_PROVIDERS = [
     {
-        "name": "Provider1",
-        "provider_token": "1234567890:TEST:XXXXXXXXXXXXXXXXXX",
+        "name": "Redsys",
+        "provider_token": "2051251535:TEST:OTk5MDA4ODgxLTAwNQ",
         "currency": "EUR",
         "country": "ES",
         "exchange_rate": 0.98,
     },
     {
-        "name": "Provider2",
-        "provider_token": "1234567890:TEST:XXXXXXXXXXXXXXXXXX",
+        "name": "YooKassa",
+        "provider_token": "381764678:TEST:143626",
         "currency": "RUB",
         "country": "RU",
         "exchange_rate": 0.1,
     },
     {
-        "name": "Provider3",
-        "provider_token": "1234567890:TEST:XXXXXXXXXXXXXXXXXX",
+        "name": "Portmone",
+        "provider_token": "1661751239:TEST:UOis-G51K-pl7k-53zV",
         "currency": "UAH",
         "country": "UA",
         "exchange_rate": 0.2,
