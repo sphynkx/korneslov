@@ -1,7 +1,7 @@
 import logging
 import time
 import asyncio
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from google import genai
 from google.genai import types as genai_types
@@ -13,6 +13,7 @@ from config import (
     GEMINI_TEMPERATURE,
     GEMINI_MAX_OUTPUT_TOKENS_CAP,
 )
+
 from i18n.messages import tr
 from texts.prompts import KORNESLOV_USER_PROMPT
 from utils.userstate import get_user_state
@@ -44,6 +45,18 @@ try:
 except Exception:
     GEMINI_RETRY_MAX_DELAY = 8.0
 
+## Streaming logging interval
+try:
+    from config import GEMINI_STREAM_LOG_INTERVAL
+except Exception:
+    GEMINI_STREAM_LOG_INTERVAL = 10
+
+## Call timeout (seconds) for a single Gemini attempt (stream or non-stream)
+try:
+    from config import GEMINI_CALL_TIMEOUT
+except Exception:
+    GEMINI_CALL_TIMEOUT = 600
+
 _client = None
 
 
@@ -63,6 +76,15 @@ async def ask_gemini(
     test_banner: str = "",
     followup: Optional[str] = None,
 ) -> str:
+    """
+    Perform Gemini chat generation and return formatted text:
+    'Korneslov: {book} {chapter} {verse}\\n<br><br>{text}{optional test banner}'.
+
+    NOTE:
+    - system_prompt should be provided by caller (already built upstream).
+    - followup replaces user content if provided.
+    - Single-attempt strategy per try; streaming can be enabled via GEMINI_USE_STREAMING.
+    """
     state = get_user_state(uid)
     lang = state.get("lang", "ru")
 
@@ -121,9 +143,7 @@ async def ask_gemini(
     delay = float(GEMINI_RETRY_BASE_DELAY)
     for attempt in range(1, int(GEMINI_MAX_RETRIES) + 2):  ## attempts = MAX_RETRIES + 1
         try:
-            text, prompt_tokens, total_tokens = await _do_gemini_call(
-                client, config, user_content
-            )
+            text, prompt_tokens, total_tokens = await _do_gemini_call(client, config, user_content)
 
             ## Sanitize HTML for Telegram
             text = sanitize_for_telegram_html(text or "")
@@ -154,7 +174,7 @@ async def ask_gemini(
             ## 503 / overload -> backoff and retry
             logging.warning("Gemini ServerError on attempt %d: %s", attempt, e)
         except Exception as e:
-            ## JSONDecodeError and other streaming issues
+            ## JSONDecodeError and other streaming issues, plus timeouts
             logging.warning("Gemini error on attempt %d: %s", attempt, e)
 
         if attempt < int(GEMINI_MAX_RETRIES) + 1:
@@ -173,9 +193,9 @@ async def _do_gemini_call(
     client: genai.Client,
     config: Optional[genai_types.GenerateContentConfig],
     contents: str,
-):
+) -> Tuple[str, Optional[int], Optional[int]]:
     """
-    Single attempt with optional streaming and non-stream fallback.
+    Single attempt with optional streaming and non-stream fallback, executed in threads.
     Returns (text, prompt_tokens, total_tokens) or raises on failure.
     """
     text = ""
@@ -185,12 +205,18 @@ async def _do_gemini_call(
     if GEMINI_USE_STREAMING:
         print("GEMINI STREAMING: enabled — using generate_content_stream()")
         t0 = time.time()
-        try:
-            text, prompt_tokens, total_tokens = _stream_and_collect(
-                client, model=GEMINI_MODEL, config=config, contents=contents
-            )
-        except Exception as e:
-            logging.exception("Gemini streaming attempt failed: %s", e)
+        ## Run blocking streaming in a thread with timeout
+        text, prompt_tokens, total_tokens = await asyncio.wait_for(
+            asyncio.to_thread(
+                _blocking_stream_collect,
+                client,
+                GEMINI_MODEL,
+                config,
+                contents,
+                int(GEMINI_STREAM_LOG_INTERVAL),
+            ),
+            timeout=float(GEMINI_CALL_TIMEOUT),
+        )
         t1 = time.time()
         print(
             f"GEMINI STREAM: done in {t1 - t0:.2f}s, collected_len={len(text)}, "
@@ -201,8 +227,16 @@ async def _do_gemini_call(
 
     if not text:
         print("GEMINI NON-STREAM: calling generate_content()")
-        response = client.models.generate_content(
-            model=GEMINI_MODEL, config=config, contents=contents
+        ## Run blocking non-stream call in a thread with timeout
+        response = await asyncio.wait_for(
+            asyncio.to_thread(
+                _blocking_generate,
+                client,
+                GEMINI_MODEL,
+                config,
+                contents,
+            ),
+            timeout=float(GEMINI_CALL_TIMEOUT),
         )
         text = extract_text_from_gemini_response(response)
         usage = getattr(response, "usage_metadata", None)
@@ -212,36 +246,52 @@ async def _do_gemini_call(
     return text, prompt_tokens, total_tokens
 
 
-def _stream_and_collect(
+def _blocking_generate(
     client: genai.Client,
     model: str,
     config: Optional[genai_types.GenerateContentConfig],
     contents: str,
 ):
+    """
+    Blocking call to generate_content executed in a worker thread.
+    Returns the raw response object.
+    """
+    return client.models.generate_content(model=model, config=config, contents=contents)
+
+
+def _blocking_stream_collect(
+    client: genai.Client,
+    model: str,
+    config: Optional[genai_types.GenerateContentConfig],
+    contents: str,
+    log_interval: int = 10,
+) -> Tuple[str, Optional[int], Optional[int]]:
+    """
+    Blocking streaming collection executed in a worker thread.
+    Returns (text, prompt_tokens, total_tokens).
+    """
     acc: List[str] = []
     prompt_tokens = None
     total_tokens = None
 
+    print("GEMINI STREAM: start")
+    stream = client.models.generate_content_stream(model=model, config=config, contents=contents)
+    chunks = 0
+    acc_len = 0
+    t0 = time.time()
     try:
-        print("GEMINI STREAM: start")
-        stream = client.models.generate_content_stream(
-            model=model, config=config, contents=contents
-        )
-        chunks = 0
-        acc_len = 0
-        t0 = time.time()
         for chunk in stream:
             chunks += 1
             try:
                 if hasattr(chunk, "text") and isinstance(chunk.text, str) and chunk.text:
                     acc.append(chunk.text)
                     acc_len += len(chunk.text)
-                    if chunks <= 3 or chunks % 10 == 0:
+                    if chunks <= 3 or (log_interval > 0 and chunks % log_interval == 0):
                         print(f"GEMINI STREAM: chunk {chunks}, len={len(chunk.text)}, acc_len={acc_len}")
             except Exception:
                 ## ignore malformed chunks but continue
                 pass
-
+    finally:
         ## usage from final stream response if available
         try:
             usage = getattr(stream, "usage_metadata", None)
@@ -249,11 +299,8 @@ def _stream_and_collect(
             total_tokens = getattr(usage, "total_token_count", None) if usage else None
         except Exception:
             pass
-
         t1 = time.time()
         print(f"GEMINI STREAM: end — chunks={chunks}, acc_len={acc_len}, elapsed={t1 - t0:.2f}s")
-    except Exception:
-        logging.exception("Gemini stream failed")
 
     text = "".join(acc).strip()
     return text, prompt_tokens, total_tokens
