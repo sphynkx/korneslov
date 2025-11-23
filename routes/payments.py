@@ -1,4 +1,5 @@
 import json
+from decimal import Decimal, ROUND_HALF_UP
 from datetime import datetime, date
 
 from aiogram import exceptions ## BEFORE other aiogram imports!!
@@ -42,6 +43,54 @@ async def handle_tgpay_confirm(callback: types.CallbackQuery):
         await callback.answer()
         return
 
+    #################
+
+    ## Fiscalization via YooKassa: prepare provider_data.receipt.
+    ## invoice_amount_cents - amount in kopeykas
+    ## major_amount - amount in rubles
+    major_amount = (Decimal(invoice_amount_cents) / Decimal(100)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+ 
+    ## Limitations: usually fiscalization is only in RUB.
+    if currency != "RUB":
+        logging.warning("Attempting to send receipt with non-RUB currency '%s'. Check ЮKassa settings.", currency)
+ 
+    need_email = True
+    send_email_to_provider = True
+ 
+    provider_data_dict = {
+        "receipt": {
+            ## Take email via tg-form (need_email/send_email_to_provider).
+            "items": [
+                 {
+                    "description": tr("tgpayment.tgbuy_price_label", lang=lang),
+                    "quantity": 1,
+                    "amount": {
+                        "value": f"{major_amount:.2f}",
+                         "currency": "RUB"
+                    },
+                    ## Chack VAT ("stavka NDS") rate compliance. For simple VAT, code is 4
+                    "vat_code": 1,
+                    "payment_mode": "full_payment",
+                    "payment_subject": "service"
+                }
+            ],
+            "tax_system_code": 1
+        }
+    }
+
+    expected_cents = int((major_amount * Decimal(100)).to_integral_value(rounding=ROUND_HALF_UP))
+    if expected_cents != invoice_amount_cents:
+        logging.warning(
+            "Mismatch between major_amount and invoice_amount_cents: %s vs %s",
+            expected_cents, invoice_amount_cents
+        )
+
+    ## serialize provider_data to JSON
+    provider_data_str = json.dumps(provider_data_dict, ensure_ascii=False, separators=(",", ":"))
+    logging.debug("PROVIDER_DATA_STR: %s", provider_data_str)
+
+    #################
+
     try:
         await callback.message.bot.send_invoice(
             chat_id=callback.message.chat.id,
@@ -52,7 +101,10 @@ async def handle_tgpay_confirm(callback: types.CallbackQuery):
             currency=currency,
             prices=[LabeledPrice(label=tr("tgpayment.tgbuy_price_label", lang=lang), amount=invoice_amount_cents)],
             start_parameter="buy_balance",
-            photo_url=TGPAYMENT_PHOTO
+            photo_url=TGPAYMENT_PHOTO,
+            need_email=need_email,
+            send_email_to_provider=send_email_to_provider,
+            provider_data=provider_data_str
         )
     except exceptions.TelegramBadRequest as e:
         ## Handle provider errors

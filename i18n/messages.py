@@ -11,8 +11,8 @@ MESSAGES = {
 
 Прайс:
 Минимальный запрос - 10 руб.
-Подробный запрос - 20 руб.
-Расширенный запрос - 30 руб.
+Подробный запрос - 15 руб.
+Расширенный запрос - 25 руб.
             """,
             "testmode_banner": "\n\n<b>Тестовый режим: оплата и баланс отключены.</b>",
         },
@@ -161,8 +161,8 @@ To pay, click the "Pay" button.
 
 Price:
 Minimum request - 0.1 EUR.
-Detailed request - 0.2 EUR.
-Advanced request - 0.3 EUR.
+Detailed request - 0.15 EUR.
+Advanced request - 0.25 EUR.
             """,
             "testmode_banner": "\n\n<b>Test mode: payment and balance are disabled.</b>",
             },
