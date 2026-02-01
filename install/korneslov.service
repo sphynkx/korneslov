@@ -1,0 +1,14 @@
+[Unit]
+Description=Korneslov Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/korneslov
+ExecStart=/bin/bash /opt/korneslov/run.sh
+Restart=always
+User=root
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

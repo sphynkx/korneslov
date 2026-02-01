@@ -6,7 +6,7 @@ An admin panel has also been created for the bot. See [rootster repository](http
 # Install Process
 
 ## App Initial
-```
+```bash
 cd /opt
 git clone https://github.com/sphynkx/korneslov
 cd /opt/korneslov
@@ -19,12 +19,12 @@ deactivate
 ```
 
 If you have access to private repo:
-```
+```bash
 cd /opt/korneslov
 git clone https://github.com/sphynkx/masoret texts
 ```
 Create configuration file `.env` and set appropriate params there:
-```
+```bash
 cp /opt/korneslov/install/.env-sample /opt/korneslov/.env
 
 ```
@@ -32,17 +32,17 @@ cp /opt/korneslov/install/.env-sample /opt/korneslov/.env
 
 ## DB Install
 If MySQL is not installed:
-```
+```bash
 dnf install mysql-server
 systemctl enable --now mysqld
 ```
 Copy from sample and modify `install/conf_db.sql` - set password for DB-user:
-```
+```bash
 cd /opt/korneslov/install
 cp conf_db.sql-sample conf_db.sql
 ```
 Create and configure DB:
-```
+```bash
 mysql -u root -p < app.sql
 mysql -u root -p < conf_db.sql
 mysql -u root -p korneslov < books.sql
@@ -64,7 +64,7 @@ You need to register billing providers for bot. Go to [@BotFather](https://t.me/
 
 # Run App
 At first run manually:
-```
+```bash
 cd /opt/korneslov
 ./run.sh
 ```
@@ -73,34 +73,15 @@ cd /opt/korneslov
 # Systems Configs
 
 ## Services Configuration
-Create new `/etc/systemd/system/korneslov-bot.service`:
-```
-[Unit]
-Description=Korneslov Telegram Bot
-After=network.target
-
-[Service]
-Type=simple
-WorkingDirectory=/opt/korneslov
-ExecStart=/bin/bash /opt/korneslov/run.sh
-Restart=always
-User=root
-Environment=PYTHONUNBUFFERED=1
-
-[Install]
-WantedBy=multi-user.target
-```
-
-Run it:
-```
+```bash
+cp install/korneslov.service /etc/systemd/system
 systemctl daemon-reload
-systemctl enable korneslov-bot.service
-systemctl start korneslov-bot.service
+systemctl enable --now korneslov.service
 ```
 Check:
-```
-systemctl status korneslov-bot.service
-journalctl -u korneslov-bot.service -f
+```bash
+systemctl status korneslov.service
+journalctl -u korneslov.service -f
 ```
 
 
@@ -108,11 +89,11 @@ journalctl -u korneslov-bot.service -f
 Only for cases then OpenAI prohibit connection from some ranges of IP (for example, reject some regions).
 
 On some external server install some simple proxy server (replace ******** with your password, dont use '!' sign):
-```
+```bash
 dnf install 3proxy
 ```
 Edit /etc/3proxy.conf:
-```
+```conf
 nscache 65536
 timeouts 1 5 30 60 180 1800 15 60
 daemon
@@ -129,19 +110,19 @@ external EXT_IP_OF_PROXY_SERVER
 socks -p1080
 ```
 Start:
-```
+```bash
 systemctl start 3proxy
 systemctl enable 3proxy
 ```
 
 Also open port 1080 in firewall:
-```
+```bash
 sudo firewall-cmd --add-port=1080/tcp --permanent
 sudo firewall-cmd --reload
 ```
 
 Return to server with application, check connection:
-```
+```bash
 curl --socks5 proxyuser:********@EXT_IP_OF_PROXY_SERVER:1080 https://api.ipify.org
 ```
 If response is same as `EXT_IP_OF_PROXY_SERVER` then everything is OK.
@@ -159,7 +140,7 @@ Run bot in your Telegram client. If everything is OK you'll see keyboardwith but
 **Note**: bot works only after the payment has been charged.
 
 Switch to necessary language, go to `Korneslov` menu, then the `Masoret` (for now the rest are not implemented). Next choose request level (`For fun`, `Details` or `Academic`). Type you request about some **Old Testament**'s book, chapter and verses in format like:
-```
+```conf
 genesis 1 1
 gen 1 2
 exodus 2 3,4-6,8-10,12
