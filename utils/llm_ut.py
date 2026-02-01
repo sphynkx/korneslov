@@ -257,11 +257,26 @@ def build_httpx_client_for_proxy(
 ) -> httpx.AsyncClient:
     """
     Create isolated HTTP client for LLM provider calls.
-    proxy_url=None -> direct.
+    Compatible with httpx 0.25.x (uses 'proxies=') and newer (where 'proxy=' exists).
+
+    We prefer 'proxies=' mapping because it works in httpx<0.26.
     """
+    timeout = httpx.Timeout(timeout_s)
+
+    if proxy_url:
+        # httpx<0.26: use 'proxies='
+        # For SOCKS, httpx[socks] must be installed (you have it).
+        return httpx.AsyncClient(
+            proxies={
+                "http://": proxy_url,
+                "https://": proxy_url,
+            },
+            timeout=timeout,
+            follow_redirects=True,
+        )
+
     return httpx.AsyncClient(
-        proxy=proxy_url,
-        timeout=httpx.Timeout(timeout_s),
+        timeout=timeout,
         follow_redirects=True,
     )
 
