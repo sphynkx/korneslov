@@ -1,0 +1,195 @@
+== Info: Protocol "socks5" not supported
+== Info: Closing connection
+== Info: Host api.ipify.org:443 was resolved.
+== Info: IPv6: (none)
+== Info: IPv4: 8.47.69.6, 8.6.112.6
+== Info:   Trying 8.47.69.6:443...
+== Info: Connected to api.ipify.org (8.47.69.6) port 443
+== Info: ALPN: curl offers h2,http/1.1
+=> Send SSL data, 5 bytes (0x5)
+0000: .....
+== Info: TLSv1.3 (OUT), TLS handshake, Client hello (1):
+=> Send SSL data, 512 bytes (0x200)
+0000: ......2.g..={.$..-_r.7.......d...~.W.. ..r....E..w.fX!././..o.^.
+0040: .xi...@.H.........,.0.......+./...#.'.................=.<.5./...
+0080: ........k.g.9.3.....k.........api.ipify.org.....................
+00c0: ....................h2.http/1.1.........1.....". ...............
+0100: ..................+........-.....3.&.$... \r.O...}.....'...... .
+0140: i.;......m......................................................
+0180: ................................................................
+01c0: ................................................................
+== Info:  CAfile: /etc/pki/tls/certs/ca-bundle.crt
+== Info:  CApath: none
+<= Recv SSL data, 5 bytes (0x5)
+0000: ....z
+== Info: TLSv1.3 (IN), TLS handshake, Server hello (2):
+<= Recv SSL data, 122 bytes (0x7a)
+0000: ...v...a,1Fe...k#.I<.w}..>JX.^........ ..r....E..w.fX!././..o.^.
+0040: .xi...@......3.$... ..'.v...q.8.;9a#..rA..#+L.$2R..a.+....
+<= Recv SSL data, 5 bytes (0x5)
+0000: .....
+<= Recv SSL data, 5 bytes (0x5)
+0000: .....
+<= Recv SSL data, 1 bytes (0x1)
+0000: .
+== Info: TLSv1.3 (IN), TLS handshake, Encrypted Extensions (8):
+<= Recv SSL data, 19 bytes (0x13)
+0000: .................h2
+== Info: TLSv1.3 (IN), TLS handshake, Certificate (11):
+<= Recv SSL data, 2523 bytes (0x9db)
+0000: ...........0...0..D.......e...j0)..,.;.Kt.0...*.H.=...0;1.0...U.
+0040: ...US1.0...U....Google Trust Services1.0...U....WE10...260101121
+0080: 550Z..260401131539Z0.1.0...U....ipify.org0Y0...*.H.=....*.H.=...
+00c0: .B..~..)...9...(@%...@....D.y..^M.OX..q=b...74/.[$...3.2.r.${..G
+0100: .......O0..K0...U...........0...U.%..0...+.......0...U.......0.0
+0140: ...U......B!.\.N.....N@3.(A...0...U.#..0....w.5g......{..y{...80
+0180: ^..+........R0P0'..+.....0...http://o.pki.goog/s/we1/Zdg0%..+...
+01c0: ..0...http://i.pki.goog/we1.crt0!..U....0...ipify.org..*.ipify.o
+0200: rg0...U. ..0.0...g.....06..U.../0-0+.).'.%http://c.pki.goog/we1/
+0240: v1q7FffOpC4.crl0.....+.....y............v.d..l............O(...5
+0280: '......}......y.H&.....G0E. u.Y.c+ur.p..@....M....DGd@.%,..k.!..
+02c0: .0.E.k....v..2..m..%=....:....i.v..W.....>3.,........=q2%.!.%.a.
+0300: N!....y.H......G0E.!..(./......AH3...I..V...[.1.J.|s$. A.:..en..
+0340: ...q...D|..N.26........0...*.H.=....I.0F.!...y....vd.......[.e..
+0380: .Z.._.......!.....RK*,.....p....a$..V.EK..%.?......0...0..%.....
+03c0: .....w.,"Jv.].....0...*.H.=...0G1.0...U....US1"0 ..U....Google T
+0400: rust Services LLC1.0...U....GTS Root R40...231213090000Z..290220
+0440: 140000Z0;1.0...U....US1.0...U....Google Trust Services1.0...U...
+0480: .WE10Y0...*.H.=....*.H.=....B..o.:.gWGL!..@.G].XG.@.\....7..|..K
+04c0: .................Y.,&...&%....V...0..0...U...........0...U.%..0.
+0500: ..+.........+.......0...U.......0.......0...U.......w.5g......{.
+0540: .y{...80...U.#..0....L..t.I6.....>.j....04..+........(0&0$..+...
+0580: ..0...http://i.pki.goog/r4.crt0+..U...$0"0 ......http://c.pki.go
+05c0: og/r/r4.crl0...U. ..0.0...g.....0...*.H.=....h.0e.1....Q..C..u..
+0600: ....@Az&....2-=....#H.R.>dy....,.nU..0&..h.b...~....D~.LI..l.b4.
+0640: ..~:..P.....}s..RAM..V....~0..z0..b.........0.3.C.....I=..0...*.
+0680: H........0W1.0...U....BE1.0...U....GlobalSign nv-sa1.0...U....Ro
+06c0: ot CA1.0...U....GlobalSign Root CA0...231115034321Z..28012800004
+0700: 2Z0G1.0...U....US1"0 ..U....Google Trust Services LLC1.0...U....
+0740: GTS Root R40v0...*.H.=....+...".b...ts.h.`.C.5..0{KI...a...F.k.a
+0780: .5.@.s...0Z.<..|.@v;...G.*...js..r9.)...._^X.e...e......s..j/...
+07c0: ......0..0...U...........0...U.%..0...+.........+.......0...U...
+0800: ....0....0...U.......L..t.I6.....>.j....0...U.#..0...`{f.E....P/
+0840: }..4....K06..+........*0(0&..+.....0...http://i.pki.goog/gsr1.cr
+0880: t0-..U...&0$0". ....http://c.pki.goog/r/gsr1.crl0...U. ..0.0...g
+08c0: .....0...*.H..............B........?c.....hH.9"s...N-.1......6..
+0900: .y.....j.{.}.t..e.h*,,.B..q...-.k..n.}V.#XX.%...G... ........U.y
+0940: u5,1[?e....B.....^.....-G...c~....k.......gX......I.P[?:.%....\.
+0980: yW.6...&.........>..n..<..8.A..^S.>. W...?H......j#....?/....n..
+09c0: F...g.3&...K..6.&;[........
+== Info: TLSv1.3 (IN), TLS handshake, CERT verify (15):
+<= Recv SSL data, 79 bytes (0x4f)
+0000: ...K...G0E. d.j.{..|?.[\N.....c......;.+A;%..!......>H.m?.+.....
+0040:  .......O.W.l.m
+== Info: TLSv1.3 (IN), TLS handshake, Finished (20):
+<= Recv SSL data, 52 bytes (0x34)
+0000: ...0ud.z........*........2n.x...... .....L).V.M(....
+=> Send SSL data, 5 bytes (0x5)
+0000: .....
+== Info: TLSv1.3 (OUT), TLS change cipher, Change cipher spec (1):
+=> Send SSL data, 1 bytes (0x1)
+0000: .
+=> Send SSL data, 5 bytes (0x5)
+0000: ....E
+=> Send SSL data, 1 bytes (0x1)
+0000: .
+== Info: TLSv1.3 (OUT), TLS handshake, Finished (20):
+=> Send SSL data, 52 bytes (0x34)
+0000: ...0.c..YA.TwAA.<Y...9./\t......iR..t.Tb.......&...3
+== Info: SSL connection using TLSv1.3 / TLS_AES_256_GCM_SHA384 / x25519 / id-ecPublicKey
+== Info: ALPN: server accepted h2
+== Info: Server certificate:
+== Info:  subject: CN=ipify.org
+== Info:  start date: Jan  1 12:15:50 2026 GMT
+== Info:  expire date: Apr  1 13:15:39 2026 GMT
+== Info:  subjectAltName: host "api.ipify.org" matched cert's "*.ipify.org"
+== Info:  issuer: C=US; O=Google Trust Services; CN=WE1
+== Info:  SSL certificate verify ok.
+== Info:   Certificate level 0: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA256
+== Info:   Certificate level 1: Public key type EC/prime256v1 (256/128 Bits/secBits), signed using ecdsa-with-SHA384
+== Info:   Certificate level 2: Public key type EC/secp384r1 (384/192 Bits/secBits), signed using ecdsa-with-SHA384
+=> Send SSL data, 5 bytes (0x5)
+0000: ....Q
+=> Send SSL data, 1 bytes (0x1)
+0000: .
+== Info: using HTTP/2
+== Info: [HTTP/2] [1] OPENED stream for https://api.ipify.org/
+== Info: [HTTP/2] [1] [:method: GET]
+== Info: [HTTP/2] [1] [:scheme: https]
+== Info: [HTTP/2] [1] [:authority: api.ipify.org]
+== Info: [HTTP/2] [1] [:path: /]
+== Info: [HTTP/2] [1] [user-agent: curl/8.6.0]
+== Info: [HTTP/2] [1] [accept: */*]
+=> Send SSL data, 5 bytes (0x5)
+0000: ....8
+=> Send SSL data, 1 bytes (0x1)
+0000: .
+=> Send header, 74 bytes (0x4a)
+0000: GET / HTTP/2
+000e: Host: api.ipify.org
+0023: User-Agent: curl/8.6.0
+003b: Accept: */*
+0048: 
+<= Recv SSL data, 5 bytes (0x5)
+0000: .....
+<= Recv SSL data, 1 bytes (0x1)
+0000: .
+== Info: TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+<= Recv SSL data, 230 bytes (0xe6)
+0000: ....... Bd.T....=TZ...}`v..y....{=.K.3....-a!.7m.]Y...s.%h....<.
+0040: ..4....`OG.q\.V.\U.8..{.B..t.s.%.q.D...|M.........1]..r."..i...X
+0080: vGg....(..w..3J...h.q.hs..P...8..)...........K.!.l.N+n.L....k4{.
+00c0: .....<R...yr...`.7..)Y.........n..JJ..
+== Info: TLSv1.3 (IN), TLS handshake, Newsession Ticket (4):
+<= Recv SSL data, 230 bytes (0xe6)
+0000: ....... _.......=TZ...}`v..y......T.V...k..t..R.$.....s.r.^....G
+0040: (..".L.]....*.........+].........z.u..l*..R..V.. ...........Uw..
+0080: P'."FG....;.%..*9-G-bL=.<....CF8...FnN.o...E,...b!...H...k..N:.z
+00c0: .....h`.W.....,.......!...}F.P@...JJ..
+== Info: old SSL session ID is stale, removing
+<= Recv SSL data, 5 bytes (0x5)
+0000: ....9
+<= Recv SSL data, 1 bytes (0x1)
+0000: .
+=> Send SSL data, 5 bytes (0x5)
+0000: .....
+=> Send SSL data, 1 bytes (0x1)
+0000: .
+<= Recv SSL data, 5 bytes (0x5)
+0000: .....
+<= Recv SSL data, 1 bytes (0x1)
+0000: .
+<= Recv SSL data, 5 bytes (0x5)
+0000: ....z
+<= Recv SSL data, 1 bytes (0x1)
+0000: .
+<= Recv SSL data, 5 bytes (0x5)
+0000: ....'
+<= Recv SSL data, 1 bytes (0x1)
+0000: .
+<= Recv SSL data, 5 bytes (0x5)
+0000: .....
+<= Recv SSL data, 1 bytes (0x1)
+0000: .
+<= Recv header, 13 bytes (0xd)
+0000: HTTP/2 200 
+<= Recv header, 37 bytes (0x25)
+0000: date: Sun, 01 Feb 2026 10:52:22 GMT
+<= Recv header, 26 bytes (0x1a)
+0000: content-type: text/plain
+<= Recv header, 20 bytes (0x14)
+0000: content-length: 13
+<= Recv header, 20 bytes (0x14)
+0000: server: cloudflare
+<= Recv header, 14 bytes (0xe)
+0000: vary: Origin
+<= Recv header, 26 bytes (0x1a)
+0000: cf-cache-status: DYNAMIC
+<= Recv header, 30 bytes (0x1e)
+0000: cf-ray: 9c70e6223e52481e-ARN
+<= Recv header, 2 bytes (0x2)
+0000: 
+<= Recv data, 13 bytes (0xd)
+0000: 79.174.85.192
+<= Recv data, 0 bytes (0x0)
+== Info: Connection #0 to host api.ipify.org left intact
