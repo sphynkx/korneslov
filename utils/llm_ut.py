@@ -7,7 +7,7 @@ import socket
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 from urllib.parse import urlparse, unquote
-
+from contextlib import contextmanager
 import httpx
 
 
@@ -352,3 +352,30 @@ async def run_with_proxy_failover(
     if last_exc is not None:
         msg += f" (last error: {type(last_exc).__name__}: {last_exc})"
     raise LLMInfraError(msg, provider=provider, attempts=attempts)
+
+
+## For Gemini provider support.
+@contextmanager
+def temp_env(env_updates: Dict[str, Optional[str]]):
+    """
+    Temporarily set/unset environment variables (process-wide).
+    Must be protected by a lock in async apps to avoid races.
+    env_updates values:
+      - str -> set value
+      - None -> unset variable
+    """
+    old: Dict[str, Optional[str]] = {}
+    try:
+        for k, v in env_updates.items():
+            old[k] = os.environ.get(k)
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+        yield
+    finally:
+        for k, prev in old.items():
+            if prev is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = prev

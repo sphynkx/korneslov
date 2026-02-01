@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from typing import Optional, List
@@ -20,20 +21,30 @@ from utils.gemini_ut import (
     sanitize_for_telegram_html,
 )
 
+from utils.llm_ut import (
+    LLMInfraError,
+    ProxySpec,
+    get_enabled_proxies,
+    run_with_proxy_failover,
+    temp_env,
+)
+
 ## Optional streaming flag; read lazily to avoid tight coupling if missing in config
 try:
     from config import GEMINI_USE_STREAMING
 except Exception:
     GEMINI_USE_STREAMING = False
 
-_client = None
+# IMPORTANT:
+# google-genai doesn't expose a clean injectable async transport for per-request proxy selection.
+# We implement multiproxy by temporarily setting env vars under a global lock.
+# This makes Gemini calls sequential (safe for parallel bot usage).
+_GEMINI_PROXY_LOCK = asyncio.Lock()
 
 
-def _get_client() -> genai.Client:
-    global _client
-    if _client is None:
-        _client = genai.Client(api_key=GEMINI_API_KEY)
-    return _client
+def _build_client() -> genai.Client:
+    # do NOT cache globally because proxy can change per attempt
+    return genai.Client(api_key=GEMINI_API_KEY)
 
 
 async def ask_gemini(
@@ -46,13 +57,16 @@ async def ask_gemini(
     followup: Optional[str] = None,
 ) -> str:
     """
-    Perform Gemini chat generation and return formatted text:
-    'Korneslov: {book} {chapter} {verse}\\n<br><br>{text}{optional test banner}'.
+    Gemini provider with multiproxy failover.
 
-    NOTE:
-    - system_prompt should be provided by caller (already built upstream).
-    - followup replaces user content if provided.
-    - Single-attempt strategy; streaming can be enabled via GEMINI_USE_STREAMING.
+    Strategy:
+      - proxies are loaded from PROXIES_CONFIG (same file as OpenAI)
+      - on each request: try priority proxy first, then others
+      - proxy is applied via env (ALL_PROXY / HTTPS_PROXY) under a global async lock
+        to avoid races in parallel requests
+
+    Raises:
+      - LLMInfraError if all proxies fail (caller should NOT charge user)
     """
     state = get_user_state(uid)
     lang = state.get("lang", "ru")
@@ -76,8 +90,6 @@ async def ask_gemini(
         user_prompt_template = KORNESLOV_USER_PROMPT.get(lang, KORNESLOV_USER_PROMPT["ru"])
         user_content = user_prompt_template.format(book=book, chapter=chapter, verse=verse)
 
-    client = _get_client()
-
     config = build_gemini_config(
         max_output_tokens=GEMINI_MAX_OUTPUT_TOKENS_CAP,
         temperature=GEMINI_TEMPERATURE,
@@ -94,86 +106,88 @@ async def ask_gemini(
             GEMINI_MAX_OUTPUT_TOKENS_CAP,
             GEMINI_TEMPERATURE,
         )
-        print(
-            "GEMINI REQUEST:",
-            {
-                "model": GEMINI_MODEL,
-                "messages": [
-                    {
-                        "role": "system",
-                        "content_preview": (system_prompt[:100] + "...")
-                        if system_prompt and len(system_prompt) > 100
-                        else (system_prompt or ""),
-                    },
-                    {
-                        "role": "user",
-                        "content_preview": (user_content[:100] + "...")
-                        if len(user_content) > 100
-                        else user_content,
-                    },
-                ],
-                "n": 1,
-                "max_tokens": GEMINI_MAX_OUTPUT_TOKENS_CAP,
-                "temperature": GEMINI_TEMPERATURE,
-                "streaming": GEMINI_USE_STREAMING,
-            },
-        )
     except Exception:
         logging.exception("Failed to log Gemini request preview")
 
+    proxies = get_enabled_proxies()
+
+    async def _attempt(_unused_http_client, proxy: ProxySpec | None):
+        # NOTE: run_with_proxy_failover passes an http_client, but Gemini SDK doesn't accept it.
+        # We still use it to unify logic; it's simply unused here.
+        #
+        # Apply proxy via env. Use ALL_PROXY and HTTPS_PROXY to cover most HTTP stacks.
+        # We set both for best compatibility.
+        env = {
+            "ALL_PROXY": proxy.url if proxy else None,
+            "HTTPS_PROXY": proxy.url if proxy else None,
+            "HTTP_PROXY": proxy.url if proxy else None,
+        }
+
+        async with _GEMINI_PROXY_LOCK:
+            with temp_env(env):
+                client = _build_client()
+
+                text = ""
+                prompt_tokens = None
+                total_tokens = None
+
+                if GEMINI_USE_STREAMING:
+                    t0 = time.time()
+                    text, prompt_tokens, total_tokens = _stream_and_collect(
+                        client, model=GEMINI_MODEL, config=config, contents=user_content
+                    )
+                    t1 = time.time()
+                    logging.debug(
+                        "Gemini stream done in %.2fs, collected_len=%s, prompt_tokens=%s, total_tokens=%s",
+                        (t1 - t0),
+                        len(text) if text else 0,
+                        prompt_tokens,
+                        total_tokens,
+                    )
+
+                if not text:
+                    response = client.models.generate_content(
+                        model=GEMINI_MODEL, config=config, contents=user_content
+                    )
+                    text = extract_text_from_gemini_response(response)
+                    usage = getattr(response, "usage_metadata", None)
+                    prompt_tokens = getattr(usage, "prompt_token_count", None) if usage else None
+                    total_tokens = getattr(usage, "total_token_count", None) if usage else None
+
+                text = sanitize_for_telegram_html(text or "")
+
+                try:
+                    completion_tokens = (
+                        (total_tokens - prompt_tokens)
+                        if (prompt_tokens is not None and total_tokens is not None)
+                        else None
+                    )
+                    logging.debug(
+                        "Gemini response len=%s tokens prompt=%s completion=%s total=%s",
+                        len(text) if text else 0,
+                        prompt_tokens,
+                        completion_tokens,
+                        total_tokens,
+                    )
+                except Exception:
+                    logging.exception("Failed to log Gemini usage/summary")
+
+                return f"""{tr("korneslov_py.ask_openai_return", lang=lang)}: {book} {chapter} {verse}\n<br><br>{text}{f'\n{test_banner}' if test_banner else ''}"""
+
     try:
-        text = ""
-        prompt_tokens = None
-        total_tokens = None
-
-        if GEMINI_USE_STREAMING:
-            print("GEMINI STREAMING: enabled — using generate_content_stream()")
-            t0 = time.time()
-            text, prompt_tokens, total_tokens = _stream_and_collect(
-                client, model=GEMINI_MODEL, config=config, contents=user_content
-            )
-            t1 = time.time()
-            print(
-                f"GEMINI STREAM: done in {t1 - t0:.2f}s, collected_len={len(text)}, "
-                f"prompt_tokens={prompt_tokens}, total_tokens={total_tokens}"
-            )
-            if not text:
-                print("GEMINI STREAM: empty accumulated text — falling back to non-stream call")
-
-        if not text:
-            print("GEMINI NON-STREAM: calling generate_content()")
-            response = client.models.generate_content(
-                model=GEMINI_MODEL, config=config, contents=user_content
-            )
-            text = extract_text_from_gemini_response(response)
-            usage = getattr(response, "usage_metadata", None)
-            prompt_tokens = getattr(usage, "prompt_token_count", None) if usage else None
-            total_tokens = getattr(usage, "total_token_count", None) if usage else None
-
-        ## Sanitize unsupported Telegram-HTML tags to reduce parse errors
-        text = sanitize_for_telegram_html(text or "")
-
-        try:
-            completion_tokens = (
-                (total_tokens - prompt_tokens)
-                if (prompt_tokens is not None and total_tokens is not None)
-                else None
-            )
-            print("GEMINI RESPONSE (preview):")
-            print((text[:4000] if text else ""))
-            print()
-            print("GEMINI RESPONSE LENGTH:", len(text) if text else 0)
-            print("==============")
-            print("Gemini tokens (if available):")
-            print("prompt_tokens:", prompt_tokens)
-            print("completion_tokens:", completion_tokens)
-            print("total_tokens:", total_tokens)
-            print("==============")
-        except Exception:
-            logging.exception("Failed to log Gemini usage/summary")
-
-        return f"""{tr("korneslov_py.ask_openai_return", lang=lang)}: {book} {chapter} {verse}\n<br><br>{text}{f'\n{test_banner}' if test_banner else ''}"""
+        # precheck_proxy_port is inside run_with_proxy_failover (if you kept that version),
+        # so dead proxies will be skipped quickly without touching Gemini SDK.
+        return await run_with_proxy_failover(
+            provider="gemini",
+            proxies=proxies,
+            func=_attempt,
+            allow_direct_if_no_proxies=False,
+        )
+    except LLMInfraError:
+        # bubble up to prevent charging
+        raise
     except Exception:
+        # keep previous behavior for non-infra errors
         logging.exception("Gemini request failed")
         return (
             tr("korneslov_py.ask_openai_exception_return", book=book, chapter=chapter, verse=verse, lang=lang)
@@ -196,29 +210,17 @@ def _stream_and_collect(
     total_tokens = None
 
     try:
-        print("GEMINI STREAM: start")
         stream = client.models.generate_content_stream(
             model=model, config=config, contents=contents
         )
-        chunks = 0
-        acc_len = 0
-        t0 = time.time()
         for chunk in stream:
-            chunks += 1
             try:
                 if hasattr(chunk, "text") and isinstance(chunk.text, str) and chunk.text:
                     acc.append(chunk.text)
-                    acc_len += len(chunk.text)
-                    if chunks <= 3 or chunks % 10 == 0:
-                        ## Log first few and then every 10th chunk to avoid spam
-                        print(
-                            f"GEMINI STREAM: chunk {chunks}, len={len(chunk.text)}, acc_len={acc_len}"
-                        )
             except Exception:
-                ## ignore malformed chunks
                 pass
 
-        ## usage from final stream response if available
+        # usage from final stream response if available
         try:
             usage = getattr(stream, "usage_metadata", None)
             prompt_tokens = getattr(usage, "prompt_token_count", None) if usage else None
@@ -226,10 +228,6 @@ def _stream_and_collect(
         except Exception:
             pass
 
-        t1 = time.time()
-        print(
-            f"GEMINI STREAM: end — chunks={chunks}, acc_len={acc_len}, elapsed={t1 - t0:.2f}s"
-        )
     except Exception:
         logging.exception("Gemini stream failed")
 
