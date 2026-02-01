@@ -142,7 +142,7 @@ sudo firewall-cmd --reload
 
 Return to server with application, check connection:
 ```
-curl --socks5 socks5h://proxyuser:********@EXT_IP_OF_PROXY_SERVER:1080 https://api.ipify.org
+curl --socks5 proxyuser:********@EXT_IP_OF_PROXY_SERVER:1080 https://api.ipify.org
 ```
 If response is same as `EXT_IP_OF_PROXY_SERVER` then everything is OK.
 
