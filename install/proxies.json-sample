@@ -1,0 +1,15 @@
+{
+  "strategy": "failover",
+  "proxies": [
+    {
+      "name": "proxy-1",
+      "url": "socks5://proxyuser1:PASSWORD1@EXT_IP_1:1080",
+      "enabled": true
+    },
+    {
+      "name": "proxy-2",
+      "url": "socks5://proxyuser2:PASSWORD2@EXT_IP_2:1080",
+      "enabled": true
+    }
+  ]
+}

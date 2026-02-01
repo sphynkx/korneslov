@@ -12,3 +12,4 @@ config.py
 *.db
 *.sql
 install/conf_db.sql
+proxies.json

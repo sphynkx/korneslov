@@ -52,7 +52,7 @@ async def handle_tgpay_confirm(callback: types.CallbackQuery):
  
     ## Limitations: usually fiscalization is only in RUB.
     if currency != "RUB":
-        logging.warning("Attempting to send receipt with non-RUB currency '%s'. Check ЮKassa settings.", currency)
+        logging.warning("Attempting to send receipt with non-RUB currency '%s'. Check YuKassa settings.", currency)
  
     need_email = True
     send_email_to_provider = True

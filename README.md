@@ -127,7 +127,7 @@ curl --socks5 proxyuser:********@EXT_IP_OF_PROXY_SERVER:1080 https://api.ipify.o
 ```
 If response is same as `EXT_IP_OF_PROXY_SERVER` then everything is OK.
 
-Set variable `ALL_PROXY` in the `.env` with proxy parameters.
+Create `proxies.json` from `install/proxies.json-sample`, set real data in it. First of proxies considered as priority. At the `.env` set `PROXIES_CONFIG=proxies.json`.
 
 
 ## Admin panel
