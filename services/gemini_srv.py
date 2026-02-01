@@ -29,21 +29,18 @@ from utils.llm_ut import (
     temp_env,
 )
 
-## Optional streaming flag; read lazily to avoid tight coupling if missing in config
 try:
     from config import GEMINI_USE_STREAMING
 except Exception:
     GEMINI_USE_STREAMING = False
 
-# IMPORTANT:
-# google-genai doesn't expose a clean injectable async transport for per-request proxy selection.
-# We implement multiproxy by temporarily setting env vars under a global lock.
-# This makes Gemini calls sequential (safe for parallel bot usage).
+
+# google-genai==1.2.0 doesn't provide clean per-request async transport injection.
+# We apply proxy via env vars under a global lock to avoid races in parallel requests.
 _GEMINI_PROXY_LOCK = asyncio.Lock()
 
 
 def _build_client() -> genai.Client:
-    # do NOT cache globally because proxy can change per attempt
     return genai.Client(api_key=GEMINI_API_KEY)
 
 
@@ -56,18 +53,6 @@ async def ask_gemini(
     test_banner: str = "",
     followup: Optional[str] = None,
 ) -> str:
-    """
-    Gemini provider with multiproxy failover.
-
-    Strategy:
-      - proxies are loaded from PROXIES_CONFIG (same file as OpenAI)
-      - on each request: try priority proxy first, then others
-      - proxy is applied via env (ALL_PROXY / HTTPS_PROXY) under a global async lock
-        to avoid races in parallel requests
-
-    Raises:
-      - LLMInfraError if all proxies fail (caller should NOT charge user)
-    """
     state = get_user_state(uid)
     lang = state.get("lang", "ru")
 
@@ -98,13 +83,11 @@ async def ask_gemini(
 
     try:
         logging.debug(
-            "Gemini request params (sanitized): {'model': %r, 'system_preview': %r, 'user_preview': %r, 'stream': %r, 'max_tokens': %r, 'temperature': %r}",
+            "Gemini request params (sanitized): model=%r system_preview=%r user_preview=%r stream=%r",
             GEMINI_MODEL,
             (system_prompt[:100] + "...") if system_prompt and len(system_prompt) > 100 else (system_prompt or ""),
             (user_content[:100] + "...") if len(user_content) > 100 else user_content,
             GEMINI_USE_STREAMING,
-            GEMINI_MAX_OUTPUT_TOKENS_CAP,
-            GEMINI_TEMPERATURE,
         )
     except Exception:
         logging.exception("Failed to log Gemini request preview")
@@ -112,11 +95,7 @@ async def ask_gemini(
     proxies = get_enabled_proxies()
 
     async def _attempt(_unused_http_client, proxy: ProxySpec | None):
-        # NOTE: run_with_proxy_failover passes an http_client, but Gemini SDK doesn't accept it.
-        # We still use it to unify logic; it's simply unused here.
-        #
-        # Apply proxy via env. Use ALL_PROXY and HTTPS_PROXY to cover most HTTP stacks.
-        # We set both for best compatibility.
+        # Apply proxy via env for duration of call.
         env = {
             "ALL_PROXY": proxy.url if proxy else None,
             "HTTPS_PROXY": proxy.url if proxy else None,
@@ -138,7 +117,7 @@ async def ask_gemini(
                     )
                     t1 = time.time()
                     logging.debug(
-                        "Gemini stream done in %.2fs, collected_len=%s, prompt_tokens=%s, total_tokens=%s",
+                        "Gemini stream done in %.2fs collected_len=%s prompt=%s total=%s",
                         (t1 - t0),
                         len(text) if text else 0,
                         prompt_tokens,
@@ -156,27 +135,9 @@ async def ask_gemini(
 
                 text = sanitize_for_telegram_html(text or "")
 
-                try:
-                    completion_tokens = (
-                        (total_tokens - prompt_tokens)
-                        if (prompt_tokens is not None and total_tokens is not None)
-                        else None
-                    )
-                    logging.debug(
-                        "Gemini response len=%s tokens prompt=%s completion=%s total=%s",
-                        len(text) if text else 0,
-                        prompt_tokens,
-                        completion_tokens,
-                        total_tokens,
-                    )
-                except Exception:
-                    logging.exception("Failed to log Gemini usage/summary")
-
                 return f"""{tr("korneslov_py.ask_openai_return", lang=lang)}: {book} {chapter} {verse}\n<br><br>{text}{f'\n{test_banner}' if test_banner else ''}"""
 
     try:
-        # precheck_proxy_port is inside run_with_proxy_failover (if you kept that version),
-        # so dead proxies will be skipped quickly without touching Gemini SDK.
         return await run_with_proxy_failover(
             provider="gemini",
             proxies=proxies,
@@ -184,11 +145,9 @@ async def ask_gemini(
             allow_direct_if_no_proxies=False,
         )
     except LLMInfraError:
-        # bubble up to prevent charging
         raise
-    except Exception:
-        # keep previous behavior for non-infra errors
-        logging.exception("Gemini request failed")
+    except Exception as e:
+        logging.exception("Gemini request failed type=%s repr=%r", type(e).__name__, e)
         return (
             tr("korneslov_py.ask_openai_exception_return", book=book, chapter=chapter, verse=verse, lang=lang)
             + (f"\n{test_banner}" if test_banner else "")
@@ -201,10 +160,6 @@ def _stream_and_collect(
     config: Optional[genai_types.GenerateContentConfig],
     contents: str,
 ):
-    """
-    Streaming path: generate_content_stream and collect chunk.text.
-    Returns (text, prompt_tokens, total_tokens).
-    """
     acc: List[str] = []
     prompt_tokens = None
     total_tokens = None
@@ -220,7 +175,6 @@ def _stream_and_collect(
             except Exception:
                 pass
 
-        # usage from final stream response if available
         try:
             usage = getattr(stream, "usage_metadata", None)
             prompt_tokens = getattr(usage, "prompt_token_count", None) if usage else None

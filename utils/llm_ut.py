@@ -3,35 +3,30 @@ import json
 import logging
 import os
 import re
-import socket
+from contextlib import contextmanager
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional, Sequence, Tuple
 from urllib.parse import urlparse, unquote
-from contextlib import contextmanager
+
 import httpx
 
 
-# ----------------------------
-# Public error types
-# ----------------------------
+DEFAULT_LLM_TIMEOUT_S = 120.0
+DEFAULT_PROXY_PRECHECK_TIMEOUT_S = 2.0
+
 
 class LLMInfraError(RuntimeError):
-    """
-    Raised when LLM request cannot be performed due to infrastructure problems:
-    - all proxies are down / misconfigured
-    - network timeouts / connect errors
-    - upstream 5xx / 429 that we treat as retryable
-    This error should be handled by business logic to avoid charging the user.
-    """
-    def __init__(self, message: str, *, provider: str = "unknown", attempts: Optional[List[Dict[str, Any]]] = None):
+    def __init__(
+        self,
+        message: str,
+        *,
+        provider: str = "unknown",
+        attempts: Optional[List[Dict[str, Any]]] = None,
+    ):
         super().__init__(message)
         self.provider = provider
         self.attempts = attempts or []
 
-
-# ----------------------------
-# Proxy config
-# ----------------------------
 
 @dataclass(frozen=True)
 class ProxySpec:
@@ -41,26 +36,12 @@ class ProxySpec:
 
 
 def _mask_proxy_url(url: str) -> str:
-    """
-    Mask credentials in proxy URL for logs:
-    socks5://user:pass@host:1080 -> socks5://user:***@host:1080
-    """
     if not isinstance(url, str) or not url:
         return ""
     return re.sub(r":([^:@/]+)@", r":***@", url)
 
 
 def load_proxies_from_file(path: str) -> List[ProxySpec]:
-    """
-    proxies.json format:
-    {
-      "strategy": "failover",
-      "proxies": [
-        {"name": "p1", "url": "socks5://user:pass@ip:1080", "enabled": true},
-        ...
-      ]
-    }
-    """
     with open(path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
@@ -78,15 +59,10 @@ def load_proxies_from_file(path: str) -> List[ProxySpec]:
         name = (item.get("name") or f"proxy-{i+1}").strip()
         enabled = bool(item.get("enabled", True))
         proxies.append(ProxySpec(name=name, url=url, enabled=enabled))
-
     return proxies
 
 
 def get_enabled_proxies() -> List[ProxySpec]:
-    """
-    Reads PROXIES_CONFIG from environment.
-    Returns enabled proxies in order (priority = first).
-    """
     cfg = (os.getenv("PROXIES_CONFIG") or "").strip()
     if not cfg:
         return []
@@ -95,31 +71,54 @@ def get_enabled_proxies() -> List[ProxySpec]:
     except Exception:
         logging.exception("Failed to load proxies config from PROXIES_CONFIG=%r", cfg)
         return []
-
     return [p for p in proxies if p.enabled and p.url]
 
 
-# ----------------------------
-# Retry / failover policy
-# ----------------------------
-
 RETRYABLE_HTTP_STATUSES = {429, 500, 502, 503, 504}
 
+
+def _iter_exc_chain(exc: BaseException, max_depth: int = 10):
+    cur: Optional[BaseException] = exc
+    depth = 0
+    while cur is not None and depth < max_depth:
+        yield cur
+        nxt = getattr(cur, "__cause__", None) or getattr(cur, "__context__", None)
+        cur = nxt if isinstance(nxt, BaseException) else None
+        depth += 1
+
+
 def is_retryable_exception(exc: BaseException) -> bool:
-    if isinstance(exc, (httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout, httpx.WriteTimeout, httpx.PoolTimeout)):
-        return True
-    if isinstance(exc, (httpx.RemoteProtocolError, httpx.NetworkError)):
-        return True
+    # 1) direct httpx/httpcore errors
+    for e in _iter_exc_chain(exc):
+        if isinstance(
+            e,
+            (
+                httpx.ConnectError,
+                httpx.ConnectTimeout,
+                httpx.ReadTimeout,
+                httpx.WriteTimeout,
+                httpx.PoolTimeout,
+                httpx.ProxyError,
+                httpx.RemoteProtocolError,
+                httpx.NetworkError,
+            ),
+        ):
+            return True
+
+        # 2) plain asyncio/socket timeouts surfaced differently
+        if isinstance(e, (TimeoutError, asyncio.TimeoutError)):
+            return True
+
+        # 3) OpenAI wraps timeouts into APITimeoutError (we don't import openai here to avoid hard dependency)
+        if e.__class__.__name__ in ("APITimeoutError", "TimeoutException"):
+            return True
+
     return False
 
 
 def is_retryable_status(status_code: Optional[int]) -> bool:
     return status_code in RETRYABLE_HTTP_STATUSES if status_code is not None else False
 
-
-# ----------------------------
-# Proxy connectivity checks (no external services)
-# ----------------------------
 
 @dataclass(frozen=True)
 class ParsedProxy:
@@ -131,12 +130,6 @@ class ParsedProxy:
 
 
 def parse_proxy_url(proxy_url: str) -> ParsedProxy:
-    """
-    Supports:
-      socks5://user:pass@host:1080
-      socks5h://host:1080
-      http://user:pass@host:3128
-    """
     u = urlparse(proxy_url)
     if not u.scheme or not u.hostname or not u.port:
         raise ValueError(f"Invalid proxy url: {proxy_url!r}")
@@ -153,14 +146,9 @@ def parse_proxy_url(proxy_url: str) -> ParsedProxy:
     )
 
 
-async def tcp_port_check(host: str, port: int, *, timeout_s: float = 2.0) -> Tuple[bool, str]:
-    """
-    Minimal check: can we open TCP connection to host:port.
-    This is the closest to "port knocking" you asked for.
-    """
+async def tcp_port_check(host: str, port: int, *, timeout_s: float = DEFAULT_PROXY_PRECHECK_TIMEOUT_S) -> Tuple[bool, str]:
     try:
-        conn = asyncio.open_connection(host, port)
-        reader, writer = await asyncio.wait_for(conn, timeout=timeout_s)
+        reader, writer = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=timeout_s)
         writer.close()
         try:
             await writer.wait_closed()
@@ -171,17 +159,7 @@ async def tcp_port_check(host: str, port: int, *, timeout_s: float = 2.0) -> Tup
         return False, f"{type(e).__name__}: {e}"
 
 
-async def socks5_handshake_check(proxy_url: str, *, timeout_s: float = 2.0) -> Tuple[bool, str]:
-    """
-    Slightly stronger than TCP check:
-    - connect to proxy
-    - send SOCKS5 greeting (no-auth + username/password methods)
-    - read server method selection
-    We don't try to CONNECT to a target host (to avoid external dependency),
-    but this already confirms it's a SOCKS5 server speaking the protocol.
-
-    Returns: (ok, info)
-    """
+async def socks5_handshake_check(proxy_url: str, *, timeout_s: float = DEFAULT_PROXY_PRECHECK_TIMEOUT_S) -> Tuple[bool, str]:
     try:
         p = parse_proxy_url(proxy_url)
         if p.scheme not in ("socks5", "socks5h"):
@@ -189,21 +167,15 @@ async def socks5_handshake_check(proxy_url: str, *, timeout_s: float = 2.0) -> T
 
         reader, writer = await asyncio.wait_for(asyncio.open_connection(p.host, p.port), timeout=timeout_s)
 
-        # SOCKS5 greeting:
-        # VER=0x05
-        # NMETHODS=2
-        # METHODS: 0x00 (no auth), 0x02 (username/password)
+        # VER=0x05, NMETHODS=2, METHODS: 0x00 (no auth), 0x02 (user/pass)
         writer.write(b"\x05\x02\x00\x02")
         await writer.drain()
 
-        # Server selects: VER, METHOD
         data = await asyncio.wait_for(reader.readexactly(2), timeout=timeout_s)
         ver, method = data[0], data[1]
         if ver != 0x05:
             writer.close()
             return False, f"bad_ver={ver}"
-
-        # 0xFF means "no acceptable methods"
         if method == 0xFF:
             writer.close()
             return False, "no_acceptable_auth_methods"
@@ -222,14 +194,7 @@ async def socks5_handshake_check(proxy_url: str, *, timeout_s: float = 2.0) -> T
         return False, f"{type(e).__name__}: {e}"
 
 
-async def check_proxy_available(proxy_url: str, *, timeout_s: float = 2.0) -> Tuple[bool, str]:
-    """
-    Universal 'availability' check:
-    - TCP connect always
-    - if socks5/socks5h: also do SOCKS5 greeting handshake
-    - for http/https proxies: only TCP check (without external CONNECT/GET)
-      because any deeper check would require a target host.
-    """
+async def check_proxy_available(proxy_url: str, *, timeout_s: float = DEFAULT_PROXY_PRECHECK_TIMEOUT_S) -> Tuple[bool, str]:
     try:
         p = parse_proxy_url(proxy_url)
     except Exception as e:
@@ -242,72 +207,77 @@ async def check_proxy_available(proxy_url: str, *, timeout_s: float = 2.0) -> Tu
     if p.scheme in ("socks5", "socks5h"):
         return await socks5_handshake_check(proxy_url, timeout_s=timeout_s)
 
-    # http/https proxy: port is open; protocol-level verification would need CONNECT to somewhere
     return True, "tcp_ok(http_proxy_not_deep_checked)"
 
 
-# ----------------------------
-# OpenAI http transport helpers
-# ----------------------------
+@contextmanager
+def temp_env(env_updates: Dict[str, Optional[str]]):
+    old: Dict[str, Optional[str]] = {}
+    try:
+        for k, v in env_updates.items():
+            old[k] = os.environ.get(k)
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+        yield
+    finally:
+        for k, prev in old.items():
+            if prev is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = prev
+
 
 def build_httpx_client_for_proxy(
     proxy_url: Optional[str],
     *,
-    timeout_s: float = 60.0,
+    timeout_s: float = DEFAULT_LLM_TIMEOUT_S,
 ) -> httpx.AsyncClient:
     """
-    Create isolated HTTP client for LLM provider calls.
-    Compatible with httpx 0.25.x (uses 'proxies=') and newer (where 'proxy=' exists).
-
-    We prefer 'proxies=' mapping because it works in httpx<0.26.
+    httpx<0.26 compatible:
+      - use proxies= mapping
+      - trust_env=False
+      - set generous timeouts (proxy + TLS + upstream latency)
     """
-    timeout = httpx.Timeout(timeout_s)
+    timeout = httpx.Timeout(
+        timeout=timeout_s,
+        connect=min(20.0, timeout_s),
+        read=timeout_s,
+        write=min(30.0, timeout_s),
+        pool=min(30.0, timeout_s),
+    )
 
     if proxy_url:
-        # httpx<0.26: use 'proxies='
-        # For SOCKS, httpx[socks] must be installed (you have it).
         return httpx.AsyncClient(
-            proxies={
-                "http://": proxy_url,
-                "https://": proxy_url,
-            },
+            proxies={"http://": proxy_url, "https://": proxy_url},
             timeout=timeout,
             follow_redirects=True,
+            trust_env=False,
         )
 
     return httpx.AsyncClient(
         timeout=timeout,
         follow_redirects=True,
+        trust_env=False,
     )
 
 
 async def run_with_proxy_failover(
     provider: str,
     proxies: Sequence[ProxySpec],
-    func,  # async callable that takes (http_client, proxy_spec_or_none)
+    func,
     *,
     allow_direct_if_no_proxies: bool = False,
     precheck_proxy_port: bool = True,
-    precheck_timeout_s: float = 2.0,
+    precheck_timeout_s: float = DEFAULT_PROXY_PRECHECK_TIMEOUT_S,
+    llm_timeout_s: float = DEFAULT_LLM_TIMEOUT_S,
 ) -> Any:
-    """
-    Failover strategy:
-      - always try priority proxy first (proxies[0])
-      - then others in order
-      - does NOT remember last successful proxy
-
-    Optional precheck:
-      - before doing expensive LLM call, ensure proxy port is reachable (and SOCKS5 handshake ok)
-      - does NOT guarantee that proxy can reach the internet, only that proxy service is up
-
-    func signature:
-      async def func(http_client: httpx.AsyncClient, proxy: Optional[ProxySpec]) -> Any
-    """
     attempts: List[Dict[str, Any]] = []
 
     if not proxies:
         if allow_direct_if_no_proxies:
-            async with build_httpx_client_for_proxy(None) as http_client:
+            async with build_httpx_client_for_proxy(None, timeout_s=llm_timeout_s) as http_client:
                 return await func(http_client, None)
         raise LLMInfraError("No enabled proxies configured", provider=provider, attempts=[])
 
@@ -319,20 +289,12 @@ async def run_with_proxy_failover(
         if precheck_proxy_port:
             ok, info = await check_proxy_available(p.url, timeout_s=precheck_timeout_s)
             if not ok:
-                attempts.append(
-                    {
-                        "proxy": proxy_label,
-                        "precheck": True,
-                        "ok": False,
-                        "info": info,
-                        "retryable": True,
-                    }
-                )
+                attempts.append({"proxy": proxy_label, "precheck": True, "ok": False, "info": info, "retryable": True})
                 logging.warning("Proxy precheck failed, provider=%s proxy=%s info=%s", provider, proxy_label, info)
                 continue
 
         try:
-            async with build_httpx_client_for_proxy(p.url) as http_client:
+            async with build_httpx_client_for_proxy(p.url, timeout_s=llm_timeout_s) as http_client:
                 return await func(http_client, p)
         except Exception as e:
             last_exc = e
@@ -367,30 +329,3 @@ async def run_with_proxy_failover(
     if last_exc is not None:
         msg += f" (last error: {type(last_exc).__name__}: {last_exc})"
     raise LLMInfraError(msg, provider=provider, attempts=attempts)
-
-
-## For Gemini provider support.
-@contextmanager
-def temp_env(env_updates: Dict[str, Optional[str]]):
-    """
-    Temporarily set/unset environment variables (process-wide).
-    Must be protected by a lock in async apps to avoid races.
-    env_updates values:
-      - str -> set value
-      - None -> unset variable
-    """
-    old: Dict[str, Optional[str]] = {}
-    try:
-        for k, v in env_updates.items():
-            old[k] = os.environ.get(k)
-            if v is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = v
-        yield
-    finally:
-        for k, prev in old.items():
-            if prev is None:
-                os.environ.pop(k, None)
-            else:
-                os.environ[k] = prev
