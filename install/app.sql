@@ -5,6 +5,7 @@ USE korneslov;
 -- Store books names
 CREATE TABLE IF NOT EXISTS books (
     id INT AUTO_INCREMENT PRIMARY KEY,
+	book_id INT NULL,
     bookname_ru VARCHAR(64) NOT NULL,
     bookname_en VARCHAR(64) NOT NULL,
     category VARCHAR(64) NOT NULL,
@@ -14,6 +15,7 @@ CREATE TABLE IF NOT EXISTS books (
     max_verses LONGTEXT NOT NULL,
     hits INT NOT NULL DEFAULT 0
 );
+CREATE UNIQUE INDEX ux_books_book_id ON books(book_id);
 
 -- Users' requests
 CREATE TABLE IF NOT EXISTS requests (
