@@ -45,11 +45,11 @@ Create and configure DB:
 ```bash
 mysql -u root -p < app.sql
 mysql -u root -p < conf_db.sql
-mysql -u root -p korneslov < books.sql
-mysql -u root -p korneslov < sources.sql
-mysql -u root -p korneslov < kjv.sql
-mysql -u root -p korneslov < synodal.sql
-mysql -u root -p korneslov < wlc.sql
+mysql -u root -p korneslov < dumps/books.sql
+mysql -u root -p korneslov < dumps/sources.sql
+mysql -u root -p korneslov < dumps/kjv.sql
+mysql -u root -p korneslov < dumps/synodal.sql
+mysql -u root -p korneslov < dumps/wlc.sql
 service mysqld restart
 ```
 

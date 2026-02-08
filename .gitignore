@@ -12,4 +12,7 @@ config.py
 *.db
 *.sql
 install/conf_db.sql
+!install/app.sql
+!install/dumps/
+!install/dumps/*.sql
 proxies.json
