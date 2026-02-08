@@ -84,3 +84,30 @@ CREATE TABLE IF NOT EXISTS admins (
     last_login DATETIME
 );
 
+CREATE TABLE IF NOT EXISTS sources (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  code VARCHAR(32) NOT NULL UNIQUE,      -- WLC / SYNODAL / KJV
+  lang CHAR(2) NOT NULL,                 -- he / ru / en
+  title VARCHAR(255) NOT NULL,
+  license TEXT,
+  notes TEXT,
+  canon_group VARCHAR(32) NOT NULL DEFAULT 'protestant_66',
+  enabled TINYINT(1) NOT NULL DEFAULT 1,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+CREATE TABLE IF NOT EXISTS verse_texts (
+  id BIGINT AUTO_INCREMENT PRIMARY KEY,
+  book_id INT NOT NULL,                  -- stable book_id (1..39 OT; 1000+ extra)
+  chapter SMALLINT NOT NULL,
+  verse SMALLINT NOT NULL,
+  source_id INT NOT NULL,
+  text MEDIUMTEXT NOT NULL,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+  CONSTRAINT fk_verse_texts_source FOREIGN KEY (source_id) REFERENCES sources(id),
+
+  UNIQUE KEY ux_verse_texts_addr (book_id, chapter, verse, source_id),
+  KEY ix_verse_texts_lookup (source_id, book_id, chapter, verse),
+  KEY ix_verse_texts_chapter (source_id, book_id, chapter)
+) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;

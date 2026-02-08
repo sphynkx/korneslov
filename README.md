@@ -46,6 +46,10 @@ Create and configure DB:
 mysql -u root -p < app.sql
 mysql -u root -p < conf_db.sql
 mysql -u root -p korneslov < books.sql
+mysql -u root -p korneslov < sources.sql
+mysql -u root -p korneslov < kjv.sql
+mysql -u root -p korneslov < synodal.sql
+mysql -u root -p korneslov < wlc.sql
 service mysqld restart
 ```
 
