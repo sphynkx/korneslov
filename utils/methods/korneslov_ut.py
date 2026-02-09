@@ -6,8 +6,9 @@ from texts.prompts import LEVELS, FOLLOWUP_PROMPT, KORNESLOV_USER_PROMPT, LEVEL_
 from texts.dummy_texts import *
 from utils.utils import _normalize_book, parse_references, _parse_verses, is_truncated
 from utils.userstate import get_user_state
+from utils.sources_ut import build_sources_for_prompt
 from db import get_conn
-from db.books import find_book_entry, increment_book_hits
+from db.books import find_book_entry, increment_book_hits, find_book_by_name_or_synonym
 
 
 ## DUMMY_TEXT = True
@@ -73,6 +74,24 @@ async def fetch_full_korneslov_response(book, chapter, verses_str, uid, level="h
         return await ask_ai(uid, book, chapter, verses_str, system_prompt=system_prompt, followup=followup)
 
     system_prompt = build_korneslov_prompt(book, chapter, verses_str, level, lang=lang)
+
+    #################
+    # Append grounded sources from DB (do not fail request if DB has no verses)
+    try:
+        verses_list = _parse_verses(verses_str)
+        book_entry = await find_book_by_name_or_synonym(book)
+        sources_block = await build_sources_for_prompt(
+            lang=lang,
+            book_entry=book_entry,
+            chapter=chapter,
+            verses=verses_list,
+        )
+        if sources_block:
+            system_prompt = system_prompt.rstrip() + "\n\n" + sources_block
+    except Exception:
+        logging.exception("Failed to build sources block for prompt")
+    #################
+
     answer = await gen_func(book, chapter, verses_str, system_prompt=system_prompt, followup=None)
 
     ## Treat empty as truncated to allow a followup attempt

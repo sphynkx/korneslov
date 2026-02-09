@@ -17,6 +17,8 @@ async def ask_ai(
     Provider dispatcher: routes to OpenAI or Gemini service based on AI_PROVIDER.
     Returns formatted string suitable for sending to Telegram.
     """
+    ## Debug dummy: switches off request to AI, output the raw prompt into bot window!!
+    return f"AskAI response!!: {system_prompt=}"
     provider = (AI_PROVIDER or "openai").lower()
 
     if provider == "gemini":

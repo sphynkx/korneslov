@@ -1,8 +1,8 @@
 ﻿INSERT INTO sources (code, lang, title, license, notes, canon_group, enabled)
 VALUES
-  ('SYNODAL', 'ru', 'Russian Synodal Translation (CSV)', 'Public Domain', NULL, 'protestant_66', 1),
-  ('KJV',     'en', 'King James Version (CSV)',         'Public Domain', NULL, 'protestant_66', 1),
-  ('WLC',     'he', 'Westminster Leningrad Codex (CSV)', 'Public Domain', NULL, 'protestant_66', 1)
+  ('SYNODAL', 'ru', 'Russian Synodal Translation', 'Public Domain', NULL, 'protestant_66', 1),
+  ('KJV',     'en', 'King James Version',         'Public Domain', NULL, 'protestant_66', 1),
+  ('WLC',     'he', 'Westminster Leningrad Codex', 'Public Domain', NULL, 'protestant_66', 1)
 ON DUPLICATE KEY UPDATE
   lang=VALUES(lang),
   title=VALUES(title),

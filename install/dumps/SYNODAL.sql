@@ -1,4 +1,4 @@
--- Auto-generated dump from synodal.csv
+-- Auto-generated dump from *.csv
 SET NAMES utf8mb4;
 SET FOREIGN_KEY_CHECKS=0;
 

@@ -47,9 +47,9 @@ mysql -u root -p < app.sql
 mysql -u root -p < conf_db.sql
 mysql -u root -p korneslov < dumps/books.sql
 mysql -u root -p korneslov < dumps/sources.sql
-mysql -u root -p korneslov < dumps/kjv.sql
-mysql -u root -p korneslov < dumps/synodal.sql
-mysql -u root -p korneslov < dumps/wlc.sql
+mysql -u root -p korneslov < dumps/KJV.sql
+mysql -u root -p korneslov < dumps/SYNODAL.sql
+mysql -u root -p korneslov < dumps/WLC.sql
 service mysqld restart
 ```
 
